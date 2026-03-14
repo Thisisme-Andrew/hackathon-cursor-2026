@@ -2,16 +2,16 @@ Database {
   "Collections": {
     "Users": {
       "userId_example": {
-        "userId": "String (UUID) — Primary Key",
-        "email": "String — unique",
+        "userId": "String (UUID) - Primary Key",
+        "email": "String - unique",
         "passwordHash": "String",
         "firstName": "String",
         "lastName": "String",
         "timezone": "String",
         "createdAt": "Timestamp",
-        "overwhelmScore": "Int (0–10) — current state snapshot",
-        "accountabilityPartnerId": "String (UUID) — ref to Users.userId", (Optional)
-        "preferredDomain": "String — optional e.g. 'software', 'medical'", (Optional)
+        "overwhelmScore": "Int (0-10) - current state snapshot",
+        "accountabilityPartnerId": "String (UUID) - ref to Users.userId", (Optional)
+        "preferredDomain": "String - optional e.g. 'software', 'medical'", (Optional)
         "settings": {
           "notificationPrefs": {
             "email": "Bool",
@@ -36,21 +36,21 @@ Database {
 
     "Tasks": {
       "taskId_example": {
-        "taskId": "String (UUID) — Primary Key",
-        "userId": "String (UUID) — FK → Users.userId",
+        "taskId": "String (UUID) - Primary Key",
+        "userId": "String (UUID) - FK -> Users.userId",
         "title": "String",
         "description": "String",
-        "urgency": "Int (1–10)",
-        "effort": "Int (1–10)",
+        "urgency": "Int (1-10)",
+        "effort": "Int (1-10)",
         "importance": Int (1-10),
         "status": Bool, (true for finished, false for unfinished)
         "estimatedTimeToComplete" : Int?,
-        "isOpenLoop": "Bool — captured quickly, not yet fully defined",
+        "isOpenLoop": "Bool - captured quickly, not yet fully defined",
         "createdAt": "Timestamp",
-        "dueAt": "Timestamp — nullable",
-        "completedAt": "Timestamp — nullable",
+        "dueAt": "Timestamp - nullable",
+        "completedAt": "Timestamp - nullable",
         "nextAction": {
-          "text": "String — smallest concrete next step",
+          "text": "String - smallest concrete next step",
           "estimateMins": "Int"
         }
       }
@@ -69,10 +69,10 @@ Database {
   },
 
   "_designNotes": {
-    "primaryKeys": "Always UUID — never email or any mutable field",
-    "foreignKeys": "userId links all three collections. sessionId links Tasks ↔ Sessions",
+    "primaryKeys": "Always UUID - never email or any mutable field",
+    "foreignKeys": "userId links all three collections. sessionId links Tasks <-> Sessions",
     "openLoop": "isOpenLoop allows fast capture without requiring full task definition",
     "overwhelmTracking": "Users.overwhelmScore = current state. Sessions track before/after per session for longitudinal data",
-    "sharedWith": "Consider deferring to v2 — adds permission logic complexity early"
+    "sharedWith": "Consider deferring to v2 - adds permission logic complexity early"
   }
 }

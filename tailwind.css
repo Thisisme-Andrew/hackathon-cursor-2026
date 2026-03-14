@@ -1,0 +1,4 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+@source "./frontend/templates/**/*.{html,jinja,j2}";
