@@ -1,4 +1,5 @@
 from urllib.parse import quote_plus
+import certifi
 from pymongo import MongoClient
 from config import Config
 
@@ -18,7 +19,10 @@ def _encode_mongo_uri(uri: str) -> str:
     return encoded
 
 
-client = MongoClient(_encode_mongo_uri(Config.MONGO_URI))
+client = MongoClient(
+    _encode_mongo_uri(Config.MONGO_URI),
+    tlsCAFile=certifi.where(),
+)
 db = client[Config.DB_NAME]
 
 users_collection = db["users"]
