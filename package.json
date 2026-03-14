@@ -5,7 +5,8 @@
     "setup:py": "python -m pip install -r requirements.txt",
     "watch:css": "tailwindcss -i ./tailwind.css -o ./frontend/static/css/output.css --watch",
     "build:css": "tailwindcss -i ./tailwind.css -o ./frontend/static/css/output.css --minify",
-    "dev": "concurrently \"python backend/run.py\" \"npm run watch:css\""
+    "dev": "concurrently \"python backend/run.py\" \"npm run watch:css\"",
+    "dev:setup": "npm run setup:py && npm run dev"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.1.13",

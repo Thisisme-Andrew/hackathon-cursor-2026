@@ -1,4 +1,6 @@
+/* Tailwind core + daisyUI plugin for the whole project. */
 @import "tailwindcss";
 @plugin "daisyui";
 
+/* Scan Jinja/HTML templates to generate only used classes. */
 @source "./frontend/templates/**/*.{html,jinja,j2}";
