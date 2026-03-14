@@ -1,0 +1,15 @@
+{
+  "name": "aria",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "setup:py": "python -m pip install -r backend/requirements.txt",
+    "dev": "concurrently \"python backend/run.py\" \"npm run watch:css -w frontend\"",
+    "build:css": "npm run build:css -w frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
