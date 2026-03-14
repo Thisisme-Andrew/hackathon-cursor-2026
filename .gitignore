@@ -4,6 +4,9 @@ __pycache__/
 *.pyo
 *.pyd
 
+# Frontend dependencies
+frontend/node_modules/
+
 # Virtual environment
 backend/venv/
 .env/
