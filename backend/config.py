@@ -7,3 +7,4 @@ class Config:
     MONGO_URI = os.getenv("MONGO_URI")
     DB_NAME = os.getenv("DB_NAME")
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY")

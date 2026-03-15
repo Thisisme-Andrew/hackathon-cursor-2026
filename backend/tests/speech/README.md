@@ -1,6 +1,6 @@
 # Backend speech services
 
-Documentation for the speech / NLP processing backend (OpenAI). Kept here to avoid merge conflicts with other backend areas.
+Documentation for the speech / NLP processing backend (Groq). Kept here to avoid merge conflicts with other backend areas.
 
 ## What’s included
 
@@ -14,7 +14,7 @@ Documentation for the speech / NLP processing backend (OpenAI). Kept here to avo
 |------|--------|
 | **Endpoint** | `POST /speech/` (or `POST /speech`) |
 | **Request body** | JSON: `{ "text": "<transcript>", "question": "<optional>" }` |
-| **Success** | `200` → `{ "answer": "<OpenAI response>" }` |
+| **Success** | `200` → `{ "answer": "<Groq response>" }` |
 | **Errors** | `400` / `502` / `503` → `{ "error": "<message>" }` |
 
 If `question` (or `prompt`) is omitted, the service uses a default: “Summarize and note key points from this speech.”
@@ -23,14 +23,14 @@ If `question` (or `prompt`) is omitted, the service uses a default: “Summarize
 
 Set in `.env` or the environment:
 
-- `OPENAI_API_KEY` — required for the speech endpoint to work.
+- `GROQ_API_KEY` — required for the speech endpoint to work.
 
 ## Running the manual tests
 
 From the **backend** directory:
 
 ```bash
-# Service only (no server; needs OPENAI_API_KEY)
+# Service only (no server; needs GROQ_API_KEY)
 python tests/speech/test_speech.py
 
 # HTTP API (server must be running: python run.py)

@@ -4,7 +4,7 @@ Manual test for speech processing (no frontend required).
 Run from backend/ (or set PYTHONPATH to backend/).
 
 Usage:
-  # Test the service directly (no server; needs OPENAI_API_KEY in .env or env):
+  # Test the service directly (no server; needs GROQ_API_KEY in .env or env):
   python tests/speech/test_speech.py
 
   # Test the HTTP API (server must be running: python run.py):
