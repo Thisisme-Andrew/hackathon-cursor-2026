@@ -1,3 +1,21 @@
+// --- Background Audio Setup ---
+const backgroundAudio = new Audio("/static/audio/bg.mp3");
+backgroundAudio.loop = true;
+backgroundAudio.volume = 0.35; // Adjust as needed for subtlety
+
+function playBackgroundAudio() {
+    if (backgroundAudio.paused) {
+        backgroundAudio.currentTime = 0;
+        backgroundAudio.play().catch(() => {});
+    }
+}
+
+function pauseBackgroundAudio() {
+    if (!backgroundAudio.paused) {
+        backgroundAudio.pause();
+    }
+}
+document.addEventListener("DOMContentLoaded", () => {
 document.addEventListener("DOMContentLoaded", async () => {
     const seedNode = document.getElementById("demo-seed");
     const seed = seedNode ? JSON.parse(seedNode.textContent) : {
@@ -324,6 +342,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function setQuestion(index) {
+            playBackgroundAudio();
         questionIndex = index % Math.max(activeQuestionSet.length, 1);
         const nextQuestion = activeQuestionSet[questionIndex];
 
