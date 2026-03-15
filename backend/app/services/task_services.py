@@ -1,6 +1,6 @@
 from datetime import datetime
 from app.db.mongo import tasks_collection
-from app.models.task_model import task_model
+from app.models.task_model import task_model, TASK_CATEGORIES
 
 
 def _parse_dt(value):
@@ -36,6 +36,10 @@ def create_task(data):
     if not (1 <= urgency <= 10 and 1 <= effort <= 10 and 1 <= importance <= 10):
         return {"error": "urgency, effort, and importance must be between 1 and 10"}
 
+    category = data.get("category", "Work")
+    if category not in TASK_CATEGORIES:
+        return {"error": f"category must be one of: {', '.join(sorted(TASK_CATEGORIES))}"}
+
     task = task_model(
         userId=userId,
         title=title,
@@ -44,6 +48,7 @@ def create_task(data):
         effort=effort,
         importance=importance,
         status=data.get("status", False),
+        category=category,
         estimatedTimeToComplete=data.get("estimatedTimeToComplete"),
         isOpenLoop=data.get("isOpenLoop", False),
         dueAt=_parse_dt(data.get("dueAt")),
@@ -64,7 +69,7 @@ def update_task(taskId, data):
     # Build update dict from provided fields only (partial update)
     updatable = (
         "title", "description", "urgency", "effort", "importance",
-        "status", "estimatedTimeToComplete", "isOpenLoop", "dueAt",
+        "status", "category", "estimatedTimeToComplete", "isOpenLoop", "dueAt",
         "completedAt", "nextAction",
     )
     update = {}
@@ -76,6 +81,11 @@ def update_task(taskId, data):
             if key in ("urgency", "effort", "importance") and val is not None:
                 if not (1 <= val <= 10):
                     return {"error": f"{key} must be between 1 and 10"}
+            if key == "category":
+                if val is None:
+                    continue  # Skip invalid category; keep existing value
+                if val not in TASK_CATEGORIES:
+                    return {"error": f"category must be one of: {', '.join(sorted(TASK_CATEGORIES))}"}
             update[key] = val
 
     if not update:
@@ -92,6 +102,16 @@ def update_task(taskId, data):
     if result.matched_count == 0:
         return {"error": "Task not found"}
     return {"message": "Task updated successfully"}
+
+
+def delete_task(taskId):
+    if tasks_collection is None:
+        return {"error": "Database is not configured. Set MONGO_URI and DB_NAME."}
+
+    result = tasks_collection.delete_one({"taskId": taskId})
+    if result.deleted_count == 0:
+        return {"error": "Task not found"}
+    return {"message": "Task deleted successfully"}
 
 
 def get_all_tasks(userId=None):
@@ -124,6 +144,7 @@ def _task_to_response(task):
         "effort": task["effort"],
         "importance": task["importance"],
         "status": task["status"],
+        "category": task.get("category", "Work"),
         "isOpenLoop": task.get("isOpenLoop", False),
         "createdAt": _serialize_dt(task.get("createdAt")),
         "dueAt": _serialize_dt(task.get("dueAt")),
