@@ -1,10 +1,34 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Response
 
 from app.services.speech_service import query_speech, DEFAULT_QUESTION
 from app.services.wellbeing_service import extract_wellbeing_scores
 from app.services.task_extraction_service import extract_tasks_from_transcript
+from app.services.tts_service import synthesize_speech
 
 speech_bp = Blueprint("speech", __name__)
+
+
+@speech_bp.route("/tts", methods=["POST"])
+def tts():
+    """Generate speech audio (MP3) from text using a neural TTS backend."""
+    data = request.get_json() or {}
+    text = data.get("text")
+    mode = data.get("mode", "calm")
+    voice = data.get("voice")
+
+    result = synthesize_speech(text=text, mode=mode, voice=voice)
+
+    if "error" in result:
+        message = result["error"]
+        if "required" in message or "cannot be empty" in message:
+            return jsonify(result), 400
+        return jsonify(result), 502
+
+    return Response(
+        result["audio"],
+        mimetype="audio/mpeg",
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 @speech_bp.route("/", methods=["POST"])

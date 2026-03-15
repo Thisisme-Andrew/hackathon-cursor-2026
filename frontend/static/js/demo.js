@@ -77,6 +77,146 @@ document.addEventListener("DOMContentLoaded", () => {
     let recognition = null;
     let fullTranscript = "";
 
+    const speechSynthesisApi = window.speechSynthesis || null;
+    let availableVoices = [];
+    let currentTtsAudio = null;
+    let currentTtsAudioUrl = "";
+    let currentTtsRequest = null;
+
+    function cacheVoices() {
+        if (!speechSynthesisApi) {
+            return;
+        }
+        availableVoices = speechSynthesisApi.getVoices() || [];
+    }
+
+    function pickQuestionVoice() {
+        if (!availableVoices.length) {
+            return null;
+        }
+
+        const preferredNames = [
+            "Natural",
+            "Neural",
+            "Ava",
+            "Jenny",
+            "Microsoft Aria",
+            "Google US English",
+            "Samantha",
+            "Karen",
+            "Zira",
+        ];
+
+        const preferred = availableVoices.find((voice) =>
+            preferredNames.some((name) => voice.name.includes(name)),
+        );
+        if (preferred) {
+            return preferred;
+        }
+
+        return (
+            availableVoices.find((voice) => voice.lang === "en-US") ||
+            availableVoices.find((voice) => voice.lang?.startsWith("en")) ||
+            null
+        );
+    }
+
+    function stopQuestionVoiceover() {
+        if (currentTtsRequest) {
+            currentTtsRequest.abort();
+            currentTtsRequest = null;
+        }
+
+        if (currentTtsAudio) {
+            currentTtsAudio.pause();
+            currentTtsAudio.currentTime = 0;
+            currentTtsAudio = null;
+        }
+
+        if (currentTtsAudioUrl) {
+            URL.revokeObjectURL(currentTtsAudioUrl);
+            currentTtsAudioUrl = "";
+        }
+
+        if (!speechSynthesisApi) {
+            return;
+        }
+        speechSynthesisApi.cancel();
+    }
+
+    async function speakQuestionWithServerTts(text) {
+        const mode = body.classList.contains("mode-urgent") ? "urgent" : "calm";
+        const controller = new AbortController();
+        currentTtsRequest = controller;
+
+        const res = await fetch("/speech/tts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text, mode }),
+            signal: controller.signal,
+        });
+
+        if (!res.ok) {
+            throw new Error("server tts unavailable");
+        }
+
+        const blob = await res.blob();
+        if (!blob.size) {
+            throw new Error("empty tts audio");
+        }
+
+        const objectUrl = URL.createObjectURL(blob);
+        currentTtsAudioUrl = objectUrl;
+        const audio = new Audio(objectUrl);
+        currentTtsAudio = audio;
+
+        audio.addEventListener("ended", () => {
+            if (currentTtsAudioUrl) {
+                URL.revokeObjectURL(currentTtsAudioUrl);
+                currentTtsAudioUrl = "";
+            }
+            currentTtsAudio = null;
+        });
+
+        await audio.play();
+    }
+
+    function speakQuestionWithBrowser(text) {
+        if (!speechSynthesisApi || !text || !text.trim()) {
+            return;
+        }
+
+        const utterance = new SpeechSynthesisUtterance(text.trim());
+        const voice = pickQuestionVoice();
+        if (voice) {
+            utterance.voice = voice;
+            utterance.lang = voice.lang;
+        } else {
+            utterance.lang = "en-US";
+        }
+        utterance.rate = 0.96;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+        speechSynthesisApi.speak(utterance);
+    }
+
+    async function speakQuestion(text) {
+        if (!text || !text.trim()) {
+            return;
+        }
+
+        stopQuestionVoiceover();
+
+        try {
+            await speakQuestionWithServerTts(text.trim());
+            return;
+        } catch (_) {
+            // Fallback to browser voice when backend TTS is unavailable or blocked.
+        }
+
+        speakQuestionWithBrowser(text.trim());
+    }
+
     function updateStepUi() {
         stepLabel.textContent = `${currentStep} / ${totalSteps}`;
         progressBar.style.width = `${(currentStep / totalSteps) * 100}%`;
@@ -173,9 +313,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function setQuestion(index) {
         questionIndex = index % Math.max(activeQuestionSet.length, 1);
+        const nextQuestion = activeQuestionSet[questionIndex];
+
         changeQuestionBtn.classList.add("hidden");
         interactionStage.classList.add("is-loading");
-        typeIntoElement(questionText, activeQuestionSet[questionIndex], 34, () => {
+        void speakQuestion(nextQuestion);
+
+        typeIntoElement(questionText, nextQuestion, 34, () => {
             interactionStage.classList.remove("is-loading");
             changeQuestionBtn.classList.remove("hidden");
         });
@@ -330,6 +474,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function startRecording() {
+        stopQuestionVoiceover();
         resetRecordingUi();
         voiceReview.classList.add("hidden");
         tapSpeakBtn.classList.add("hidden");
@@ -455,6 +600,17 @@ document.addEventListener("DOMContentLoaded", () => {
     applyTone("calm");
     setInputMode("voice");
     updateStepUi();
+
+    if (speechSynthesisApi) {
+        cacheVoices();
+        speechSynthesisApi.onvoiceschanged = cacheVoices;
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) {
+                stopQuestionVoiceover();
+            }
+        });
+        window.addEventListener("beforeunload", stopQuestionVoiceover);
+    }
 
     const openTeamBtn = document.getElementById("open-team");
     const teamDialog = document.getElementById("team-dialog");
