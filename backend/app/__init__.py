@@ -22,6 +22,29 @@ def create_app():
             initial_mode = "signup"
         return render_template("auth.html", initial_mode=initial_mode)
 
+    @app.route("/demo")
+    def demo_page():
+        demo_seed = {
+            "calmQuestions": [
+                "Let's keep it simple - what's been sitting at the top of your mind this morning?",
+                "What's one thing you want to make clearer before the day ends?",
+                "If today felt 20% lighter, what would change first?",
+                "What is one next step that would help you feel grounded?",
+            ],
+            "urgentQuestions": [
+                "If you could only fix one thing in the next hour, what would it be?",
+                "What is the highest-risk issue right now?",
+                "What is the fastest move that reduces pressure immediately?",
+                "What must be done first to stop things from getting worse?",
+            ],
+            "voiceSamples": {
+                "calm": "I have this big project deadline next week and I cannot focus on where to begin.",
+                "urgent": "Everything feels urgent and I need a clear first action right now.",
+            },
+            "steps": 4,
+        }
+        return render_template("demo.html", demo_seed=demo_seed)
+
     try:
         from app.routes.user_routes import user_bp
 
