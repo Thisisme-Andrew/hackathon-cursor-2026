@@ -10,13 +10,39 @@ CALM_QUESTIONS = [
     "What's one thing you want to make clearer before the day ends?",
     "If today felt 20% lighter, what would change first?",
     "What is one next step that would help you feel grounded?",
+    "What made you smile recently?",
 ]
 
 URGENT_QUESTIONS = [
     "If you could only fix one thing in the next hour, what would it be?",
     "What is the highest-risk issue right now?",
     "What is the fastest move that reduces pressure immediately?",
-    "What must be done first to stop things from getting worse?",
+]
+
+# Activities for each mode
+CALM_ACTIVITIES = [
+    "Take a slow, deep breath for 20 seconds.",
+    "Stretch your arms and relax your shoulders for 20 seconds.",
+    "Close your eyes and count 10 slow breaths.",
+    "Smile gently and notice how you feel for 20 seconds.",
+    "Write down one thing you're grateful for.",
+    "Stand up and do a gentle side stretch for 20 seconds.",
+    "Sip some water and notice the sensation.",
+    "Look out the window and notice something new.",
+    "Roll your shoulders and neck gently for 20 seconds.",
+    "Wiggle your fingers and toes for 20 seconds.",
+]
+URGENT_ACTIVITIES = [
+    "Pause for a 20-second breathing session: inhale deeply, exhale slowly.",
+    "Stand up and shake out your hands for 20 seconds.",
+    "Look away from the screen and focus on a distant object for 20 seconds.",
+    "Quickly write down your top priority for the next 10 minutes.",
+    "Splash some water on your face or wash your hands.",
+    "Do 10 jumping jacks or march in place for 20 seconds.",
+    "Tense and relax your fists 5 times.",
+    "Take 3 slow, deep breaths and exhale fully.",
+    "Stretch your arms overhead and hold for 10 seconds.",
+    "Close your eyes and count to 20 slowly.",
 ]
 
 VOICE_SAMPLES = {
@@ -52,8 +78,10 @@ def _build_demo_seed(include_user=False):
     seed = {
         "calmQuestions": CALM_QUESTIONS,
         "urgentQuestions": URGENT_QUESTIONS,
+        "calmActivities": CALM_ACTIVITIES,
+        "urgentActivities": URGENT_ACTIVITIES,
         "voiceSamples": VOICE_SAMPLES,
-        "steps": 4,
+        "steps": 5,  # default to calm mode steps
     }
     if include_user:
         seed["user"] = Config.DEMO_USER

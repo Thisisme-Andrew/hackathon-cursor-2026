@@ -87,11 +87,20 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const calmQuestions = Array.isArray(seed.calmQuestions) ? seed.calmQuestions : [];
     const urgentQuestions = Array.isArray(seed.urgentQuestions) ? seed.urgentQuestions : [];
+    const calmActivities = Array.isArray(seed.calmActivities) ? seed.calmActivities : [
+        "Take a slow, deep breath for 20 seconds.",
+        "Stretch your arms and relax your shoulders for 20 seconds."
+    ];
+    const urgentActivities = Array.isArray(seed.urgentActivities) ? seed.urgentActivities : [
+        "Pause for a 20-second breathing session: inhale deeply, exhale slowly."
+    ];
     const demoVoiceResponses = seed.voiceSamples || { calm: "", urgent: "" };
-    const totalSteps = Number(seed.steps) > 0 ? Number(seed.steps) : 4;
+    let totalSteps = Number(seed.steps) > 0 ? Number(seed.steps) : 5;
 
     let questionIndex = 0;
     let activeQuestionSet = calmQuestions;
+    let activeActivities = calmActivities;
+    let activityQueue = [];
     let selectedInputMode = "voice";
     let questionTypingTimer = null;
     let reviewTypingTimer = null;
@@ -100,6 +109,41 @@ document.addEventListener("DOMContentLoaded", async () => {
     let currentStep = 1;
     let muted = false;
     let resultTasksForSave = [];
+    // --- Activity Modal Logic ---
+    const activityModal = document.getElementById("activity-modal");
+    const activityText = document.getElementById("activity-text");
+    const activityTimer = document.getElementById("activity-timer");
+    const activityContinue = document.getElementById("activity-continue");
+
+    function showActivity(duration = 20, prompt = "Take a short break!") {
+        activityText.textContent = prompt;
+        activityModal.classList.remove("hidden");
+        activityContinue.classList.add("hidden");
+        let timeLeft = duration;
+        activityTimer.textContent = `${timeLeft}s`;
+        const interval = setInterval(() => {
+            timeLeft -= 1;
+            activityTimer.textContent = `${timeLeft}s`;
+            if (timeLeft <= 0) {
+                clearInterval(interval);
+                activityTimer.textContent = "";
+                activityContinue.classList.remove("hidden");
+            }
+        }, 1000);
+        activityContinue.onclick = () => {
+            activityModal.classList.add("hidden");
+            activityContinue.classList.add("hidden");
+            // After activity, move to next question and step
+            questionIndex += 1;
+            currentStep += 1;
+            updateStepUi();
+            if (currentStep > totalSteps) {
+                showResults();
+            } else {
+                setQuestion(questionIndex);
+            }
+        };
+    }
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition = null;
@@ -342,19 +386,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function setQuestion(index) {
-            playBackgroundAudio();
-        questionIndex = index % Math.max(activeQuestionSet.length, 1);
-        const nextQuestion = activeQuestionSet[questionIndex];
-
+        playBackgroundAudio();
+        questionIndex = index;
+        const nextQuestion = activeQuestionSet[questionIndex % activeQuestionSet.length];
         changeQuestionBtn.classList.add("hidden");
         interactionStage.classList.add("is-loading");
-        // Start typing animation only after audio is ready and starts playing
         (async () => {
             try {
                 await speakQuestion(nextQuestion);
-            } catch (e) {
-                // fallback: still show text if audio fails
-            }
+            } catch (e) {}
             typeIntoElement(questionText, nextQuestion, 34, () => {
                 interactionStage.classList.remove("is-loading");
                 changeQuestionBtn.classList.remove("hidden");
@@ -370,16 +410,28 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function cycleQuestion() {
-        setQuestion((questionIndex + 1) % activeQuestionSet.length);
+        // Replace the current question with a new random one from the pool (not already shown)
+        let pool = body.classList.contains("mode-urgent") ? urgentQuestions : calmQuestions;
+        // Exclude the current question
+        const unused = pool.filter((q, i) => i !== questionIndex && !activeQuestionSet.includes(q));
+        if (unused.length > 0) {
+            // Replace current question with a random unused one
+            const newQ = unused[Math.floor(Math.random() * unused.length)];
+            activeQuestionSet[questionIndex] = newQ;
+            setQuestion(questionIndex);
+        } else {
+            // If all questions used, just re-show the current one
+            setQuestion(questionIndex);
+        }
     }
 
-    async function moveToNextQuestion() {
+    function moveToNextQuestion() {
         if (currentStep < totalSteps) {
             currentStep += 1;
             updateStepUi();
             cycleQuestion();
         } else {
-            await showResults();
+            showResults();
         }
     }
 
@@ -639,7 +691,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         body.classList.toggle("mode-urgent", isUrgent);
         modeIcon.textContent = isUrgent ? "\u26A1" : "\uD83C\uDF43";
         modeText.textContent = isUrgent ? "Urgent" : "Calm";
-        activeQuestionSet = isUrgent ? urgentQuestions : calmQuestions;
+        if (isUrgent) {
+            activeQuestionSet = urgentQuestions;
+            activeActivities = urgentActivities;
+            totalSteps = 3;
+            // Show activity only after Q2 (after submitting Q2, i.e., after step 2)
+            activityQueue = [2];
+        } else {
+            activeQuestionSet = calmQuestions;
+            activeActivities = calmActivities;
+            totalSteps = 5;
+            // Show activities after Q2 and Q4 (after submitting Q2 and Q4, i.e., after steps 2 and 4)
+            activityQueue = [2, 4];
+        }
         currentStep = 1;
         combinedTranscript = "";
         lastStepTranscript = "";

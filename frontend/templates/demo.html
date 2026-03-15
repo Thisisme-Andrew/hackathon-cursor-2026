@@ -47,6 +47,16 @@
         {% endif %}
     </header>
 
+    <!-- Activity Modal -->
+    <div id="activity-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 hidden">
+        <div class="rounded-2xl bg-white px-8 py-8 shadow-xl text-center max-w-xs w-full">
+            <div id="activity-text" class="mb-4 text-lg font-semibold text-[#334772]"></div>
+            <div id="activity-timer" class="mb-2 text-2xl font-bold text-[#7ccfa9]"></div>
+            <button id="activity-continue"
+                class="btn mt-4 w-full rounded-full bg-[#7ccfa9] text-white font-bold hidden">Continue</button>
+        </div>
+    </div>
+
     <main class="mx-auto grid w-full max-w-[1200px] grid-cols-1 lg:grid-cols-2">
         <section class="flex min-h-[620px] flex-col items-center justify-center px-6 py-8 text-center">
             <div class="orb-wrap" id="orb-wrap">
