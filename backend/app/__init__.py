@@ -70,6 +70,7 @@ def _build_dashboard_seed():
 
 
 def _register_blueprints(app):
+    # Core CRUD/API blueprints.
     try:
         from app.routes.user_routes import user_bp
         from app.routes.task_routes import task_bp
@@ -80,6 +81,15 @@ def _register_blueprints(app):
         app.register_blueprint(auth_bp, url_prefix="/auth")
     except Exception:
         # Keep the app bootable even when database env vars are not set.
+        pass
+
+    # NLP/speech routes are optional and should not block startup.
+    try:
+        from app.routes.speech_routes import speech_bp
+
+        app.register_blueprint(speech_bp, url_prefix="/speech")
+    except Exception:
+        # Keep the app bootable even when GROQ_API_KEY/deps are not set.
         pass
 
 
