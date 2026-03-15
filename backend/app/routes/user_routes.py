@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from app.services.user_service import create_user, get_all_users
+from app.services.user_service import create_user, get_all_users, update_user, delete_user
 
 user_bp = Blueprint("users", __name__)
 
@@ -7,9 +7,40 @@ user_bp = Blueprint("users", __name__)
 def add_user():
     data = request.get_json()
     result = create_user(data)
-    return jsonify(result)
+    if "error" in result:
+        return jsonify(result), 400
+
+    return jsonify(result), 201
 
 @user_bp.route("/", methods=["GET"])
 def fetch_users():
     result = get_all_users()
     return jsonify(result)
+
+@user_bp.route("/<user_id>", methods=["PUT"])
+def edit_user(user_id):
+    """
+    Update an existing user by userId.
+    """
+    data = request.get_json()
+    result = update_user(user_id, data)
+
+    if "error" in result:
+        if result["error"] == "User not found":
+            return jsonify(result), 404
+        return jsonify(result), 400
+
+    return jsonify(result), 200
+
+
+@user_bp.route("/<user_id>", methods=["DELETE"])
+def remove_user(user_id):
+    """
+    Delete a user by userId.
+    """
+    result = delete_user(user_id)
+
+    if "error" in result:
+        return jsonify(result), 404
+
+    return jsonify(result), 200
