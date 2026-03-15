@@ -23,4 +23,12 @@ def create_app():
         # Keep the app bootable even when database env vars are not set.
         pass
 
+    try:
+        from app.routes.speech_routes import speech_bp
+
+        app.register_blueprint(speech_bp, url_prefix="/speech")
+    except Exception:
+        # Keep the app bootable even when OPENAI_API_KEY is not set.
+        pass
+
     return app
