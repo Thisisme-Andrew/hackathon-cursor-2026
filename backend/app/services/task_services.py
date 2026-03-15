@@ -54,6 +54,46 @@ def create_task(data):
     return {"message": "Task created successfully", "taskId": task["taskId"]}
 
 
+def update_task(taskId, data):
+    if tasks_collection is None:
+        return {"error": "Database is not configured. Set MONGO_URI and DB_NAME."}
+
+    if not data:
+        return {"error": "No data provided"}
+
+    # Build update dict from provided fields only (partial update)
+    updatable = (
+        "title", "description", "urgency", "effort", "importance",
+        "status", "estimatedTimeToComplete", "isOpenLoop", "dueAt",
+        "completedAt", "nextAction",
+    )
+    update = {}
+    for key in updatable:
+        if key in data:
+            val = data[key]
+            if key in ("dueAt", "completedAt"):
+                val = _parse_dt(val)
+            if key in ("urgency", "effort", "importance") and val is not None:
+                if not (1 <= val <= 10):
+                    return {"error": f"{key} must be between 1 and 10"}
+            update[key] = val
+
+    if not update:
+        return {"error": "No valid fields to update"}
+
+    # Auto-set completedAt when status becomes true
+    if update.get("status") is True and "completedAt" not in update:
+        update["completedAt"] = datetime.utcnow()
+
+    result = tasks_collection.update_one(
+        {"taskId": taskId},
+        {"$set": update},
+    )
+    if result.matched_count == 0:
+        return {"error": "Task not found"}
+    return {"message": "Task updated successfully"}
+
+
 def get_all_tasks(userId=None):
     if tasks_collection is None:
         return {"error": "Database is not configured. Set MONGO_URI and DB_NAME."}

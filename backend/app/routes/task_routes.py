@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from app.services.task_services import create_task, get_all_tasks
+from app.services.task_services import create_task, get_all_tasks, update_task
 
 task_bp = Blueprint("tasks", __name__)
 
@@ -15,4 +15,11 @@ def add_task():
 def fetch_tasks():
     userId = request.args.get("userId")
     result = get_all_tasks(userId=userId)
+    return jsonify(result)
+
+
+@task_bp.route("/<taskId>", methods=["PATCH"])
+def patch_task(taskId):
+    data = request.get_json() or {}
+    result = update_task(taskId, data)
     return jsonify(result)
