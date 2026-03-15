@@ -96,12 +96,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         urgent: urgentQuestions[0] || "What needs attention first?",
     };
     const GENERIC_FOLLOWUP = "What else is on your mind?";
+    const MAX_FOLLOWUPS = 3;
     let selectedInputMode = "voice";
     let questionTypingTimer = null;
     let reviewTypingTimer = null;
     let recordInterval = null;
     let recordSecondsLeft = 30;
     let currentStep = 1;
+    let followUpCount = 0;
     let muted = false;
     let resultTasksForSave = [];
 
@@ -283,8 +285,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function updateStepUi() {
-        stepLabel.textContent = `${currentStep} / ${totalSteps}`;
-        progressBar.style.width = `${(currentStep / totalSteps) * 100}%`;
+        if (followUpCount === 0) {
+            stepLabel.textContent = "Question";
+        } else {
+            stepLabel.textContent = "Follow-up";
+        }
+        progressBar.style.width = followUpCount === 0 ? "0%" : `${Math.min(100, (followUpCount / MAX_FOLLOWUPS) * 100)}%`;
     }
 
     function updateOrbState(state) {
@@ -408,15 +414,49 @@ document.addEventListener("DOMContentLoaded", async () => {
         setQuestion(question);
     }
 
-    async function moveToNextQuestion() {
-        if (currentStep < totalSteps) {
-            currentStep += 1;
+    async function handleSubmitResponse() {
+        const stepText = selectedInputMode === "voice"
+            ? (lastStepTranscript || (document.getElementById("voice-output") && document.getElementById("voice-output").value.trim()) || "").trim()
+            : (typedInput && typedInput.value.trim()) || "";
+        if (stepText) {
+            combinedTranscript += (combinedTranscript ? "\n\n" : "") + stepText;
+        }
+        lastStepTranscript = "";
+        if (typedInput) typedInput.value = "";
+        if (voiceOutput) voiceOutput.value = "";
+
+        demoNote.textContent = "Analyzing your response...";
+        interactionStage.classList.add("is-loading");
+
+        let payload = null;
+        try {
+            const res = await fetch("/speech/analyze", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: combinedTranscript.trim(), userId }),
+            });
+            payload = await res.json();
+        } catch (_) {
+            payload = { extractedTasks: [], wellbeing: {} };
+        }
+
+        interactionStage.classList.remove("is-loading");
+        demoNote.textContent = "";
+
+        const extracted = payload.extractedTasks || [];
+        if (extracted.length > 0) {
+            await showResults(payload);
+            return;
+        }
+        if (followUpCount < MAX_FOLLOWUPS) {
+            followUpCount += 1;
+            currentStep = followUpCount + 1;
             updateStepUi();
             const question = await fetchNextQuestion();
             setQuestion(question);
-        } else {
-            await showResults();
+            return;
         }
+        await showResults(payload);
     }
 
     // ---- Results screen data & logic ----
@@ -601,7 +641,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         };
     }
 
-    async function showResults() {
+    function hasElevatedWellbeing(wellbeing) {
+        if (!wellbeing || wellbeing.error) return false;
+        const keys = ["stressAnxiousArousal", "fatigueSleepiness", "cognitiveLoad", "decisionParalysis"];
+        return keys.some((k) => typeof wellbeing[k] === "number" && wellbeing[k] >= 5);
+    }
+
+    async function showResults(optionalPayload) {
         const resultsScreen = document.getElementById("results-screen");
         const loadingEl = document.getElementById("results-loading");
         const contentEl = document.getElementById("results-content");
@@ -612,26 +658,27 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.scrollTo(0, 0);
 
         let resultTasks = [];
+        let payload = optionalPayload;
         const transcript = combinedTranscript.trim();
         const isUrgent = body.classList.contains("mode-urgent");
 
-        if (transcript) {
+        if (!payload && transcript) {
             try {
                 const res = await fetch("/speech/analyze", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ text: transcript, userId }),
                 });
-                const payload = await res.json();
-                const extracted = payload.extractedTasks || [];
-                if (extracted.length > 0) {
-                    resultTasks = extracted.map(mapExtractedTaskToDisplay);
-                    if (isUrgent) {
-                        resultTasks = resultTasks.map((t) => ({ ...t, prio: "HIGH" }));
-                    }
-                }
+                payload = await res.json();
             } catch (_) {
-                /* fall through to fallback */
+                payload = {};
+            }
+        }
+
+        if (payload && payload.extractedTasks && payload.extractedTasks.length > 0) {
+            resultTasks = payload.extractedTasks.map(mapExtractedTaskToDisplay);
+            if (isUrgent) {
+                resultTasks = resultTasks.map((t) => ({ ...t, prio: "HIGH" }));
             }
         }
 
@@ -646,6 +693,20 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (loadingEl) loadingEl.classList.add("hidden");
         if (contentEl) contentEl.classList.remove("hidden");
+
+        const breathingCtaEl = document.getElementById("breathing-cta");
+        if (breathingCtaEl) {
+            if (payload && hasElevatedWellbeing(payload.wellbeing)) {
+                breathingCtaEl.classList.remove("hidden");
+                const link = breathingCtaEl.querySelector('a[href*="/breathing"]');
+                if (link) {
+                    const returnUrl = isSessionMode ? "/dashboard" : "/demo";
+                    link.href = "/breathing?return_url=" + encodeURIComponent(returnUrl);
+                }
+            } else {
+                breathingCtaEl.classList.add("hidden");
+            }
+        }
 
         const themeEl = document.getElementById("theme-chips");
         if (themeEl) {
@@ -676,6 +737,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         modeIcon.textContent = isUrgent ? "\u26A1" : "\uD83C\uDF43";
         modeText.textContent = isUrgent ? "Urgent" : "Calm";
         currentStep = 1;
+        followUpCount = 0;
         combinedTranscript = "";
         lastStepTranscript = "";
         updateStepUi();
@@ -835,13 +897,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     voiceConfirmBtn.addEventListener("click", () => {
-        const stepText = (lastStepTranscript || voiceOutput.value.trim() || "").trim();
-        if (stepText) {
-            combinedTranscript += (combinedTranscript ? "\n\n" : "") + stepText;
-        }
-        lastStepTranscript = "";
-        demoNote.textContent = "Saved for demo. Moving to next question...";
-        setTimeout(moveToNextQuestion, 520);
+        handleSubmitResponse();
     });
 
     typeSubmitBtn.addEventListener("click", () => {
@@ -849,10 +905,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             typedInput.focus();
             return;
         }
-        const stepText = typedInput.value.trim();
-        combinedTranscript += (combinedTranscript ? "\n\n" : "") + stepText;
-        demoNote.textContent = "Submitted for demo. Moving to next question...";
-        setTimeout(moveToNextQuestion, 520);
+        handleSubmitResponse();
     });
 
     await applyTone("calm");

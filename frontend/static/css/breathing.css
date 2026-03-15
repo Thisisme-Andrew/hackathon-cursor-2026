@@ -1,0 +1,57 @@
+.breathing-visual {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 240px;
+    height: 240px;
+}
+
+.breathing-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 9999px;
+    background: radial-gradient(
+        circle at 30% 28%,
+        var(--orb-c1, #daf7ea) 0%,
+        var(--orb-c2, #72c79f) 70%
+    );
+    box-shadow: 0 16px 36px color-mix(in srgb, var(--accent) 38%, transparent 62%);
+    transition: transform 0.1s ease-out;
+}
+
+.breathing-circle.phase-inhale {
+    animation: breatheIn 4s ease-in-out forwards;
+}
+
+.breathing-circle.phase-hold {
+    transform: scale(1.45);
+    animation: none;
+}
+
+.breathing-circle.phase-exhale {
+    transform: scale(1.45);
+    animation: breatheOut 6s ease-in-out forwards;
+}
+
+.breathing-circle.phase-idle {
+    transform: scale(0.85);
+    animation: none;
+}
+
+@keyframes breatheIn {
+    0% {
+        transform: scale(0.85);
+    }
+    100% {
+        transform: scale(1.45);
+    }
+}
+
+@keyframes breatheOut {
+    0% {
+        transform: scale(1.45);
+    }
+    100% {
+        transform: scale(0.85);
+    }
+}
