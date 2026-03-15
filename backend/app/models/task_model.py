@@ -1,6 +1,16 @@
 import uuid
 from datetime import datetime
 
+TASK_CATEGORIES = frozenset({
+    "Work",
+    "Health",
+    "Relationships",
+    "Finance",
+    "Personal Growth",
+    "Spirituality",
+    "Family",
+})
+
 
 def task_model(
     userId,
@@ -10,6 +20,7 @@ def task_model(
     effort,
     importance,
     status=False,
+    category="Work",
     estimatedTimeToComplete=None,
     isOpenLoop=False,
     dueAt=None,
@@ -27,6 +38,7 @@ def task_model(
         "effort": effort,
         "importance": importance,
         "status": status,
+        "category": category,
         "isOpenLoop": isOpenLoop,
         "createdAt": now,
         "dueAt": dueAt,
