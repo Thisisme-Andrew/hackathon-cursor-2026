@@ -9,3 +9,4 @@ load_dotenv(backend_dir / ".env")
 class Config:
     MONGO_URI = os.getenv("MONGO_URI")
     DB_NAME = os.getenv("DB_NAME")
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY")
