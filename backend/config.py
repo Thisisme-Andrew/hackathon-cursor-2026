@@ -13,6 +13,7 @@ class Config:
     MONGO_URI = os.getenv("MONGO_URI")
     DB_NAME = os.getenv("DB_NAME")
     GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+    GROQ_FRONTEND_API_KEY = os.getenv("GROQ_FRONTEND_API_KEY") or os.getenv("GROQ_API_KEY")
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-jwt-secret")
 

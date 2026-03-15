@@ -53,7 +53,8 @@ def _build_demo_seed(include_user=False):
         "calmQuestions": CALM_QUESTIONS,
         "urgentQuestions": URGENT_QUESTIONS,
         "voiceSamples": VOICE_SAMPLES,
-        "steps": 4,
+        "steps": 5,
+        "useDynamicQuestions": True,
     }
     if include_user:
         seed["user"] = Config.DEMO_USER

@@ -15,7 +15,7 @@ function pauseBackgroundAudio() {
         backgroundAudio.pause();
     }
 }
-document.addEventListener("DOMContentLoaded", () => {
+
 document.addEventListener("DOMContentLoaded", async () => {
     const seedNode = document.getElementById("demo-seed");
     const seed = seedNode ? JSON.parse(seedNode.textContent) : {
@@ -88,10 +88,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     const calmQuestions = Array.isArray(seed.calmQuestions) ? seed.calmQuestions : [];
     const urgentQuestions = Array.isArray(seed.urgentQuestions) ? seed.urgentQuestions : [];
     const demoVoiceResponses = seed.voiceSamples || { calm: "", urgent: "" };
-    const totalSteps = Number(seed.steps) > 0 ? Number(seed.steps) : 4;
+    const totalSteps = Number(seed.steps) > 0 ? Number(seed.steps) : 5;
+    const useDynamicQuestions = seed.useDynamicQuestions === true;
 
-    let questionIndex = 0;
-    let activeQuestionSet = calmQuestions;
+    const FALLBACK_QUESTIONS = {
+        calm: calmQuestions[0] || "What's on your mind today?",
+        urgent: urgentQuestions[0] || "What needs attention first?",
+    };
+    const GENERIC_FOLLOWUP = "What else is on your mind?";
     let selectedInputMode = "voice";
     let questionTypingTimer = null;
     let reviewTypingTimer = null;
@@ -247,6 +251,37 @@ document.addEventListener("DOMContentLoaded", async () => {
         speakQuestionWithBrowser(text.trim());
     }
 
+    async function fetchNextQuestion() {
+        const isUrgent = body.classList.contains("mode-urgent");
+        const mode = isUrgent ? "urgent" : "calm";
+        if (!useDynamicQuestions) {
+            const fallback = isUrgent ? urgentQuestions : calmQuestions;
+            const idx = Math.min(currentStep - 1, fallback.length - 1);
+            return fallback[idx] || FALLBACK_QUESTIONS[mode];
+        }
+        try {
+            const res = await fetch("/speech/next-question", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    transcriptSoFar: combinedTranscript,
+                    stepNumber: currentStep,
+                    mode,
+                }),
+            });
+            const data = await res.json();
+            if (data.question && data.question.trim()) {
+                return data.question.trim();
+            }
+            throw new Error(data.error || "No question returned");
+        } catch (err) {
+            if (currentStep === 1) {
+                return FALLBACK_QUESTIONS[mode];
+            }
+            return GENERIC_FOLLOWUP;
+        }
+    }
+
     function updateStepUi() {
         stepLabel.textContent = `${currentStep} / ${totalSteps}`;
         progressBar.style.width = `${(currentStep / totalSteps) * 100}%`;
@@ -341,10 +376,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         fullTranscript = "";
     }
 
-    function setQuestion(index) {
-            playBackgroundAudio();
-        questionIndex = index % Math.max(activeQuestionSet.length, 1);
-        const nextQuestion = activeQuestionSet[questionIndex];
+    function setQuestion(questionContent) {
+        playBackgroundAudio();
+        const nextQuestion = questionContent || FALLBACK_QUESTIONS.calm;
 
         changeQuestionBtn.classList.add("hidden");
         interactionStage.classList.add("is-loading");
@@ -369,15 +403,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         updateOrbState("speaking");
     }
 
-    function cycleQuestion() {
-        setQuestion((questionIndex + 1) % activeQuestionSet.length);
+    async function cycleQuestion() {
+        const question = await fetchNextQuestion();
+        setQuestion(question);
     }
 
     async function moveToNextQuestion() {
         if (currentStep < totalSteps) {
             currentStep += 1;
             updateStepUi();
-            cycleQuestion();
+            const question = await fetchNextQuestion();
+            setQuestion(question);
         } else {
             await showResults();
         }
@@ -634,17 +670,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.scrollTo(0, 0);
     }
 
-    function applyTone(mode) {
+    async function applyTone(mode) {
         const isUrgent = mode === "urgent";
         body.classList.toggle("mode-urgent", isUrgent);
         modeIcon.textContent = isUrgent ? "\u26A1" : "\uD83C\uDF43";
         modeText.textContent = isUrgent ? "Urgent" : "Calm";
-        activeQuestionSet = isUrgent ? urgentQuestions : calmQuestions;
         currentStep = 1;
         combinedTranscript = "";
         lastStepTranscript = "";
         updateStepUi();
-        setQuestion(0);
+        const question = await fetchNextQuestion();
+        setQuestion(question);
     }
 
     function setInputMode(mode) {
@@ -819,7 +855,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         setTimeout(moveToNextQuestion, 520);
     });
 
-    applyTone("calm");
+    await applyTone("calm");
     setInputMode("voice");
     updateStepUi();
 

@@ -4,6 +4,7 @@ from app.services.speech_service import query_speech, DEFAULT_QUESTION
 from app.services.wellbeing_service import extract_wellbeing_scores
 from app.services.task_extraction_service import extract_tasks_from_transcript
 from app.services.tts_service import synthesize_speech
+from app.services.question_service import generate_next_question
 
 speech_bp = Blueprint("speech", __name__)
 
@@ -29,6 +30,41 @@ def tts():
         mimetype="audio/mpeg",
         headers={"Cache-Control": "no-store"},
     )
+
+
+@speech_bp.route("/next-question", methods=["POST"])
+def next_question():
+    """Generate the next question for the demo flow using Groq."""
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Request body must be JSON."}), 400
+
+    transcript_so_far = data.get("transcriptSoFar", "") or ""
+    step_number = data.get("stepNumber")
+    mode = data.get("mode", "calm")
+
+    if step_number is None:
+        return jsonify({"error": "stepNumber is required."}), 400
+
+    try:
+        step_number = int(step_number)
+    except (TypeError, ValueError):
+        return jsonify({"error": "stepNumber must be a number between 1 and 5."}), 400
+
+    result = generate_next_question(
+        transcript_so_far=transcript_so_far,
+        step_number=step_number,
+        mode=mode,
+    )
+
+    if "error" in result:
+        if "not configured" in result["error"]:
+            return jsonify(result), 503
+        if "stepNumber" in result["error"] or "must be" in result["error"]:
+            return jsonify(result), 400
+        return jsonify(result), 502
+
+    return jsonify({"question": result["question"]}), 200
 
 
 @speech_bp.route("/", methods=["POST"])
