@@ -174,8 +174,83 @@ document.addEventListener("DOMContentLoaded", () => {
         if (currentStep < totalSteps) {
             currentStep += 1;
             updateStepUi();
+            cycleQuestion();
+        } else {
+            showResults();
         }
-        cycleQuestion();
+    }
+
+    // ---- Results screen data & logic ----
+
+    const DEMO_THEMES = ["Project Deadline", "Procrastination", "Manager Comms", "Mental Load"];
+
+    const DEMO_TASKS = [
+        { name: "Open project document — write one sentence", dur: "~5 min",  cat: "Work",   prio: "LOW" },
+        { name: "Reply to manager's email",                   dur: "~5 min",  cat: "Work",   prio: "LOW" },
+        { name: "Set a 25-minute Pomodoro timer",             dur: "~1 min",  cat: "Work",   prio: "LOW" },
+        { name: "Write section outline (bullet points only)", dur: "~20 min", cat: "Work",   prio: "LOW" },
+        { name: "Drink water & take a 5-min walk",            dur: "~10 min", cat: "Health", prio: "LOW" },
+        { name: "Deep work block: draft first full section",  dur: "~25 min", cat: "Work",   prio: "LOW" },
+    ];
+
+    const CAT_STYLE = {
+        Work:         "background:#f2eced;color:#7f5b63",
+        Health:       "background:#f0f7e8;color:#5a8a3a",
+        Finance:      "background:#fef7e6;color:#9a7a20",
+        Relationships:"background:#f0f0fa;color:#6060b0",
+    };
+
+    const PRIO_STYLE = {
+        LOW:  "background:#f0f2f5;color:#8799b4",
+        MED:  "background:#fdf6e8;color:#a08030",
+        HIGH: "background:#fdf0ee;color:#c8604a",
+    };
+
+    window.toggleDate = function (i) {
+        const el = document.getElementById("dt-" + i);
+        if (el) {
+            const hidden = el.style.display === "none" || !el.style.display;
+            el.style.display = hidden ? "block" : "none";
+        }
+    };
+
+    function showResults() {
+        // Populate theme chips
+        const themeEl = document.getElementById("theme-chips");
+        if (themeEl) {
+            themeEl.innerHTML = DEMO_THEMES.map((t) =>
+                `<span style="border-radius:9999px;padding:4px 12px;font-size:12px;font-weight:600;` +
+                `background:color-mix(in srgb,var(--accent) 12%,white 88%);color:var(--accent);` +
+                `border:1px solid color-mix(in srgb,var(--accent) 25%,white 75%)">${t}</span>`
+            ).join("");
+        }
+
+        // Populate task list
+        const taskEl = document.getElementById("task-list");
+        if (taskEl) {
+            taskEl.innerHTML = DEMO_TASKS.map((t, i) => {
+                const cat  = CAT_STYLE[t.cat]  || CAT_STYLE.Work;
+                const prio = PRIO_STYLE[t.prio] || PRIO_STYLE.LOW;
+                const sep  = i > 0 ? "border-top:1px solid #f0f2f5;" : "";
+                return (
+                    `<li style="${sep}display:flex;align-items:flex-start;gap:8px;padding:12px 0">` +
+                    `<span style="margin-top:6px;height:6px;width:6px;flex:none;border-radius:9999px;background:#334772"></span>` +
+                    `<span style="flex:1;font-size:14px;font-weight:500;line-height:1.45;color:#2f426c">${t.name}</span>` +
+                    `<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;padding-top:2px;flex:none">` +
+                    `<div style="display:flex;align-items:center;gap:5px">` +
+                    `<span style="white-space:nowrap;font-size:10px;color:#8da0be">${t.dur}</span>` +
+                    `<span style="border-radius:9999px;padding:2px 8px;font-size:10px;font-weight:600;${cat}">${t.cat}</span>` +
+                    `<span style="border-radius:9999px;padding:2px 8px;font-size:10px;font-weight:700;${prio}">${t.prio}</span>` +
+                    `<button style="font-size:13px;cursor:pointer;background:none;border:none;padding:0;line-height:1" onclick="toggleDate(${i})" title="Add due date">📅</button>` +
+                    `</div>` +
+                    `<input type="date" id="dt-${i}" style="display:none;font-size:11px;border-radius:8px;border:1px solid #dfebe7;background:#fff;padding:3px 8px;max-width:130px">` +
+                    `</div></li>`
+                );
+            }).join("");
+        }
+
+        document.getElementById("results-screen").classList.remove("hidden");
+        window.scrollTo(0, 0);
     }
 
     function applyTone(mode) {

@@ -13,25 +13,37 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/demo.css') }}" />
 </head>
 
-<body class="min-h-screen mode-calm" data-mode="calm">
+<body class="min-h-screen mode-calm" data-mode="calm" data-session-mode="{{ '1' if session_mode else '0' }}"
+    data-board-href="{{ board_href }}">
     <header class="border-b border-[var(--line)] px-5 py-3">
         <div class="mx-auto flex w-full max-w-[1200px] items-center justify-between">
             <a href="{{ url_for('home') }}" class="inline-flex items-center gap-2 text-xs font-bold orion-wordmark">
                 <span class="h-2.5 w-2.5 rounded-full bg-[var(--accent)]"></span>
                 ORION
             </a>
-            <button id="mode-toggle" type="button"
-                class="mode-pill btn h-8 min-h-0 rounded-full px-4 text-xs font-bold normal-case">
-                <span id="mode-icon">&#127811;</span>
-                <span id="mode-text">Calm</span>
-            </button>
+            <div class="flex items-center gap-2">
+                {% if session_mode %}
+                <a href="{{ board_href }}"
+                    class="mode-pill btn h-8 min-h-0 rounded-full px-4 text-xs font-bold normal-case">Board</a>
+                {% endif %}
+                <button id="mode-toggle" type="button"
+                    class="mode-pill btn h-8 min-h-0 rounded-full px-4 text-xs font-bold normal-case">
+                    <span id="mode-icon">&#127811;</span>
+                    <span id="mode-text">Calm</span>
+                </button>
+            </div>
         </div>
         <div class="mx-auto mt-4 flex w-full max-w-[1200px] items-center gap-3 text-sm">
             <div class="top-progress flex-1 rounded-full"><span></span></div>
             <span id="step-label" class="text-xs font-bold text-[#7488b0]">1 / 4</span>
         </div>
+        {% if session_mode %}
+        <p class="mx-auto mt-2 w-full max-w-[1200px] text-right text-[11px] font-medium text-[#9aa9c0]">Use mode to
+            switch calm or urgent tone</p>
+        {% else %}
         <p class="mx-auto mt-2 w-full max-w-[1200px] text-right text-[11px] font-medium text-[#9aa9c0]">Click mode to
             switch tone</p>
+        {% endif %}
     </header>
 
     <main class="mx-auto grid w-full max-w-[1200px] grid-cols-1 lg:grid-cols-2">
@@ -140,6 +152,185 @@
 
     <script id="demo-seed" type="application/json">{{ demo_seed | tojson }}</script>
     <script src="{{ url_for('static', filename='js/demo.js') }}" defer></script>
+
+    <!-- ===== Results Screen ===== -->
+    <div id="results-screen" class="fixed inset-0 hidden overflow-y-auto" style="z-index:30;background:var(--bg)">
+        <div class="mx-auto max-w-sm px-5 py-10">
+
+            <div class="mb-6 text-center">
+                <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full"
+                    style="background:color-mix(in srgb,var(--accent) 14%,white 86%)">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" stroke-width="2.3" style="color:var(--accent)">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                </div>
+                <h2 class="mb-1 text-2xl font-bold" style="color:#2f426c">Session complete</h2>
+                <p class="text-sm" style="color:#8da0be">Orion found your core themes and built your focus plan.</p>
+            </div>
+
+            <div class="card mb-4 border-0 bg-white shadow-sm">
+                <div class="card-body gap-3 p-5">
+                    <p class="text-xs font-bold uppercase tracking-widest" style="color:#8da0be">Key themes detected</p>
+                    <div id="theme-chips" class="flex flex-wrap gap-2"></div>
+                </div>
+            </div>
+
+            <div class="card mb-6 border-0 bg-white shadow-sm">
+                <div class="card-body gap-0 p-5">
+                    <div class="mb-3 flex items-center justify-between">
+                        <p class="text-xs font-bold uppercase tracking-widest" style="color:#8da0be">6 Tasks queued</p>
+                        <p class="text-xs" style="color:#8da0be">Tap 📅 to add a due date</p>
+                    </div>
+                    <ul id="task-list"></ul>
+                </div>
+            </div>
+
+            {% if session_mode %}
+            <a href="{{ board_href }}"
+                class="btn btn-block h-14 rounded-full border-0 text-base font-bold normal-case text-white"
+                style="background:var(--accent);box-shadow:0 12px 28px var(--accent-soft)">
+                Save to Board &nbsp;→
+            </a>
+            <p class="mt-3 text-center">
+                <a href="{{ board_href }}" class="text-sm font-medium" style="color:#8da0be">Back to board</a>
+            </p>
+            {% else %}
+            <button onclick="document.getElementById('save-modal').showModal()"
+                class="btn btn-block h-14 rounded-full border-0 text-base font-bold normal-case text-white"
+                style="background:var(--accent);box-shadow:0 12px 28px var(--accent-soft)">
+                Sign in to Save Tasks &nbsp;→
+            </button>
+            <p class="mt-3 text-center">
+                <a href="{{ url_for('home') }}" class="text-sm font-medium" style="color:#8da0be">Skip — don't save</a>
+            </p>
+            {% endif %}
+
+        </div>
+    </div>
+
+    {% if not session_mode %}
+    <!-- ===== Auth / Save Modal (DaisyUI modal) ===== -->
+    <dialog id="save-modal" class="modal">
+        <div class="modal-box w-11/12 max-w-sm rounded-3xl border-0 p-0 shadow-2xl">
+            <div class="p-5">
+                <div class="mb-5 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="h-2.5 w-2.5 rounded-full" style="background:var(--accent)"></span>
+                        <span class="font-bold tracking-wide" style="font-size:17px;color:#334772">ORION</span>
+                    </div>
+                    <form method="dialog">
+                        <button class="btn btn-circle btn-ghost btn-sm text-slate-400">✕</button>
+                    </form>
+                </div>
+
+                <div class="mb-5 grid grid-cols-2 rounded-2xl p-1.5" style="background:#eff1f5">
+                    <button id="stab-l" onclick="sTab('l')" class="rounded-xl py-2.5 text-sm font-bold transition"
+                        style="color:#334772;background:#fff;box-shadow:0 2px 8px rgba(90,105,140,0.12)">Log in</button>
+                    <button id="stab-s" onclick="sTab('s')" class="rounded-xl py-2.5 text-sm font-bold transition"
+                        style="color:#a8b5c8;background:transparent">Sign up</button>
+                </div>
+
+                <p id="save-msg" class="mb-3 hidden rounded-2xl px-3 py-2 text-sm"></p>
+
+                <div id="sview-l" class="space-y-3">
+                    <div>
+                        <p class="mb-1.5 text-xs font-bold uppercase tracking-widest" style="color:#7588ac">Email</p>
+                        <input id="sl-email" type="email" placeholder="you@email.com"
+                            class="input input-bordered w-full rounded-2xl"
+                            style="background:#f0f2f5;border-color:#d6dce6;color:#7082a4" />
+                    </div>
+                    <div>
+                        <p class="mb-1.5 text-xs font-bold uppercase tracking-widest" style="color:#7588ac">Password</p>
+                        <input id="sl-pw" type="password" placeholder="Your password"
+                            class="input input-bordered w-full rounded-2xl"
+                            style="background:#f0f2f5;border-color:#d6dce6;color:#7082a4" />
+                    </div>
+                    <button onclick="sDoLogin()"
+                        class="btn btn-block mt-2 h-14 rounded-full border-0 text-base font-bold normal-case text-white"
+                        style="background:var(--accent);box-shadow:0 14px 24px var(--accent-soft)">
+                        Log in ›
+                    </button>
+                </div>
+
+                <div id="sview-s" class="hidden space-y-3">
+                    <div>
+                        <p class="mb-1.5 text-xs font-bold uppercase tracking-widest" style="color:#7588ac">First name
+                        </p>
+                        <input id="ss-name" type="text" placeholder="Your first name"
+                            class="input input-bordered w-full rounded-2xl"
+                            style="background:#f0f2f5;border-color:#d6dce6;color:#7082a4" />
+                    </div>
+                    <div>
+                        <p class="mb-1.5 text-xs font-bold uppercase tracking-widest" style="color:#7588ac">Email</p>
+                        <input id="ss-email" type="email" placeholder="you@email.com"
+                            class="input input-bordered w-full rounded-2xl"
+                            style="background:#f0f2f5;border-color:#d6dce6;color:#7082a4" />
+                    </div>
+                    <div>
+                        <p class="mb-1.5 text-xs font-bold uppercase tracking-widest" style="color:#7588ac">Password</p>
+                        <input id="ss-pw" type="password" placeholder="At least 6 characters"
+                            class="input input-bordered w-full rounded-2xl"
+                            style="background:#f0f2f5;border-color:#d6dce6;color:#7082a4" />
+                    </div>
+                    <button onclick="sDoSignup()"
+                        class="btn btn-block mt-2 h-14 rounded-full border-0 text-base font-bold normal-case text-white"
+                        style="background:var(--accent);box-shadow:0 14px 24px var(--accent-soft)">
+                        Create account ›
+                    </button>
+                </div>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    </dialog>
+
+    <script>
+        function sTab(t) {
+            const isL = t === "l";
+            document.getElementById("sview-l").classList.toggle("hidden", !isL);
+            document.getElementById("sview-s").classList.toggle("hidden", isL);
+            const tabL = document.getElementById("stab-l");
+            const tabS = document.getElementById("stab-s");
+            const on = "color:#334772;background:#fff;box-shadow:0 2px 8px rgba(90,105,140,0.12)";
+            const off = "color:#a8b5c8;background:transparent";
+            tabL.style.cssText = (isL ? on : off) + ";border-radius:.75rem;padding:.625rem 0;font-size:.875rem;font-weight:700;transition:all .15s";
+            tabS.style.cssText = (isL ? off : on) + ";border-radius:.75rem;padding:.625rem 0;font-size:.875rem;font-weight:700;transition:all .15s";
+            sClear();
+        }
+        function sSetMsg(text, ok) {
+            const el = document.getElementById("save-msg");
+            el.textContent = text;
+            el.style.background = ok ? "#edf9f2" : "#fff2ef";
+            el.style.color = ok ? "#3a8969" : "#c56f5b";
+            el.classList.remove("hidden");
+        }
+        function sClear() {
+            const el = document.getElementById("save-msg");
+            el.textContent = "";
+            el.classList.add("hidden");
+        }
+        function sDoLogin() {
+            const email = document.getElementById("sl-email").value.trim();
+            const pw = document.getElementById("sl-pw").value.trim();
+            if (email === "admin@gmail.com" && pw === "123456") {
+                sSetMsg("Logged in — tasks saved! (demo mode)", true);
+            } else {
+                sSetMsg("Invalid credentials. Try admin@gmail.com / 123456", false);
+            }
+        }
+        function sDoSignup() {
+            const name = document.getElementById("ss-name").value.trim();
+            const email = document.getElementById("ss-email").value.trim();
+            const pw = document.getElementById("ss-pw").value.trim();
+            if (!name || !email || pw.length < 6) {
+                sSetMsg("Fill all fields. Password must be ≥ 6 characters.", false);
+                return;
+            }
+            sSetMsg("Demo account created. Backend integration coming soon.", true);
+        }
+    </script>
+    {% endif %}
+
 </body>
 
 </html>

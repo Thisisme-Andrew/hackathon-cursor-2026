@@ -1,0 +1,1033 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Orion Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}" />
+    <style>
+        :root {
+            --bg: #f5f8f8;
+            --line: #dbe6e3;
+            --text: #2f426c;
+            --muted: #8fa2bf;
+            --accent: #7ccfa9;
+            --accent-soft: rgba(124, 207, 169, 0.25);
+            --high: #cf5a3f;
+            --high-soft: #f8e7e3;
+            --med: #d39a43;
+            --med-soft: #fcf2df;
+            --low: #a9b7ca;
+            --low-soft: #eef2f7;
+        }
+
+        body {
+            font-family: "Poppins", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .shell {
+            max-width: 860px;
+            margin: 0 auto;
+        }
+
+        .topbar {
+            border-bottom: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.72);
+            backdrop-filter: blur(6px);
+        }
+
+        .orion-wordmark {
+            color: #334772;
+            letter-spacing: 0.28em;
+            font-weight: 800;
+            font-size: 28px;
+        }
+
+        .quote-line {
+            color: #afbdd1;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .quote-refresh {
+            border: 0;
+            background: transparent;
+            color: #b7c4d7;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .panel {
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.82);
+        }
+
+        .task-row {
+            border: 1px solid #e4eaee;
+            border-radius: 18px;
+            background: #fff;
+            padding: 14px 16px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .task-row.high {
+            border-left: 3px solid var(--high);
+        }
+
+        .task-row.med {
+            border-left: 3px solid var(--med);
+        }
+
+        .task-row.low {
+            border-left: 3px solid #d5dfea;
+        }
+
+        .dot {
+            border-radius: 9999px;
+            margin-top: 8px;
+            flex: 0 0 auto;
+        }
+
+        .dot.high {
+            width: 11px;
+            height: 11px;
+            background: var(--high);
+        }
+
+        .dot.med {
+            width: 9px;
+            height: 9px;
+            background: var(--med);
+        }
+
+        .dot.low {
+            width: 7px;
+            height: 7px;
+            background: #c7d1de;
+        }
+
+        .chip {
+            border-radius: 9999px;
+            border: 1px solid #dce4ee;
+            background: #f7f9fc;
+            color: #8ea2bf;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            white-space: nowrap;
+        }
+
+        .chip.cat-work {
+            background: #f2eced;
+            color: #7f5b63;
+        }
+
+        .chip.cat-health {
+            background: #f0f7e8;
+            color: #5a8a3a;
+        }
+
+        .chip.cat-rel {
+            background: #f0f0fa;
+            color: #6060b0;
+        }
+
+        .chip.cat-fin {
+            background: #fef7e6;
+            color: #9a7a20;
+        }
+
+        .chip.cat-grow {
+            background: #edf2fc;
+            color: #5d77ac;
+        }
+
+        .chip.cat-spirit {
+            background: #fff5ea;
+            color: #b27838;
+        }
+
+        .chip.cat-family {
+            background: #eaf6ef;
+            color: #4a8f6e;
+        }
+
+        .prio-pill {
+            border-radius: 9999px;
+            border: 1px solid #dce4ee;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 10px;
+            line-height: 1;
+        }
+
+        .prio-pill.high {
+            color: var(--high);
+            background: var(--high-soft);
+            border-color: #f0ccc3;
+        }
+
+        .prio-pill.med {
+            color: var(--med);
+            background: var(--med-soft);
+            border-color: #f2d39b;
+        }
+
+        .prio-pill.low {
+            color: #8ea4c3;
+            background: #eff3f8;
+            border-color: #dbe4ef;
+        }
+
+        .priority-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 9999px;
+            border: 0;
+            font-size: 13px;
+            font-weight: 700;
+            background: #ecedf1;
+            color: #8e9db5;
+        }
+
+        .priority-btn.active {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 5px 14px var(--accent-soft);
+        }
+
+        .focus-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(245, 248, 248, 0.95);
+            z-index: 60;
+            display: none;
+            flex-direction: column;
+        }
+
+        .focus-card {
+            width: min(540px, 92%);
+            border-radius: 24px;
+            border: 1px solid #e6ebef;
+            border-top: 4px solid #ccd7e4;
+            background: #fff;
+            box-shadow: 0 20px 48px rgba(44, 63, 95, 0.14);
+        }
+
+        .focus-card.high {
+            border-top-color: var(--high);
+        }
+
+        .focus-card.med {
+            border-top-color: var(--med);
+        }
+
+        .focus-card.low {
+            border-top-color: #c8d4e2;
+        }
+
+        .focus-dots {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .focus-dots span {
+            width: 7px;
+            height: 7px;
+            border-radius: 9999px;
+            background: #d8e0ea;
+        }
+
+        .focus-dots span.active.high {
+            background: var(--high);
+        }
+
+        .focus-dots span.active.med {
+            background: var(--med);
+        }
+
+        .focus-dots span.active.low {
+            background: #8ea4c3;
+        }
+
+        .ring {
+            width: 56px;
+            height: 56px;
+            border-radius: 9999px;
+            display: grid;
+            place-items: center;
+            font-size: 20px;
+            font-weight: 800;
+            color: #334772;
+            background: conic-gradient(var(--accent) 0deg, #dce8e2 0deg);
+        }
+
+        .ring>span {
+            width: 46px;
+            height: 46px;
+            border-radius: 9999px;
+            background: #f7fbf9;
+            display: grid;
+            place-items: center;
+            font-size: 17px;
+            font-weight: 700;
+        }
+
+        .user-dropdown {
+            position: absolute;
+            right: 0;
+            top: 56px;
+            width: 200px;
+            border: 1px solid #dce3ea;
+            border-radius: 16px;
+            background: #fff;
+            box-shadow: 0 16px 28px rgba(44, 63, 95, 0.16);
+            padding: 10px;
+            z-index: 40;
+        }
+
+        .hide {
+            display: none;
+        }
+
+        .mobile-wrap {
+            padding: 14px;
+        }
+
+        @media (max-width: 760px) {
+            .orion-wordmark {
+                font-size: 24px;
+            }
+
+            .nav-stack {
+                gap: 8px;
+                flex-wrap: wrap;
+                justify-content: flex-end;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="topbar">
+        <div class="shell mobile-wrap flex items-center justify-between gap-3">
+            <a href="{{ url_for('home') }}" class="inline-flex items-center gap-2">
+                <span class="h-3 w-3 rounded-full"
+                    style="background:var(--accent);box-shadow:0 0 0 3px rgba(124,207,169,.16)"></span>
+                <span class="orion-wordmark">ORION</span>
+            </a>
+
+            <div class="nav-stack flex items-center gap-2">
+                <a href="{{ url_for('session_page') }}"
+                    class="btn h-12 min-h-0 rounded-full border-0 px-5 text-base font-bold normal-case text-white"
+                    style="background:var(--accent);box-shadow:0 12px 20px var(--accent-soft)">
+                    Session
+                </a>
+                <button id="open-add" type="button" class="btn btn-circle h-12 w-12 border-0 text-xl"
+                    style="background:#e8edf2;color:#334772">+</button>
+
+                <div class="relative">
+                    <button id="user-menu-btn" type="button"
+                        class="btn h-12 min-h-0 rounded-full border-0 px-3 text-base font-bold normal-case text-white"
+                        style="background:#2f4a77">
+                        <span class="mr-2 inline-grid h-7 w-7 place-items-center rounded-full"
+                            style="background:#5a6f93;font-size:12px">SA</span>
+                        <span id="user-name-top">sagesse</span>
+                    </button>
+
+                    <div id="user-dropdown" class="user-dropdown hide">
+                        <div class="px-2 pb-2">
+                            <p id="user-name-menu" class="text-base font-bold text-[#334772]">sagesse</p>
+                            <p id="user-email-menu" class="text-sm text-[#9aacc1]">sagesse@gmail.com</p>
+                        </div>
+                        <div class="my-1 border-t border-[#e6ecf2]"></div>
+                        <button id="open-priority-settings"
+                            class="btn btn-ghost btn-sm w-full justify-start normal-case text-[15px] font-semibold text-[#334772]">
+                            Priority Settings
+                        </button>
+                        <a href="{{ url_for('home') }}"
+                            class="btn btn-ghost btn-sm w-full justify-start normal-case text-[15px] font-semibold text-[#cf5a3f]">
+                            Sign out
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="shell mobile-wrap">
+        <section class="pt-4">
+            <h1 class="text-[48px] font-extrabold leading-[1.05] text-[#2f4a77] sm:text-[54px]">Good evening, <span
+                    id="hero-name">sagesse</span>.</h1>
+            <p class="mt-3 text-[32px] font-semibold text-[#6f84ad] sm:text-[34px]">Ready when you are.</p>
+            <div class="mt-2 flex items-center justify-between gap-3">
+                <p id="quote-text" class="quote-line">"Progress, not perfection."</p>
+                <button id="refresh-quote" type="button" class="quote-refresh"
+                    aria-label="Refresh quote">&#8635;</button>
+            </div>
+        </section>
+
+        <section id="add-task-card" class="panel hide mt-5 p-4 sm:p-5">
+            <p class="mb-3 text-[34px] font-semibold text-[#7a8eb2]">What needs to be done?</p>
+            <div class="mb-3 border-t border-[#d5deea]"></div>
+
+            <div class="grid gap-3 sm:grid-cols-2">
+                <select id="new-duration"
+                    class="select h-11 min-h-0 rounded-full border-[#d3dbe7] text-[28px] font-semibold text-[#2f4a77]">
+                    <option>5 min</option>
+                    <option selected>15 min</option>
+                    <option>20 min</option>
+                    <option>30 min</option>
+                    <option>45 min</option>
+                    <option>1 hr</option>
+                </select>
+
+                <select id="new-category"
+                    class="select h-11 min-h-0 rounded-full border-[#d3dbe7] text-[28px] font-semibold text-[#2f4a77]">
+                    <option>Work</option>
+                    <option>Health</option>
+                    <option>Relationships</option>
+                    <option>Finance</option>
+                    <option>Personal Growth</option>
+                    <option>Spirituality</option>
+                    <option>Family</option>
+                </select>
+            </div>
+
+            <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
+                <div class="join">
+                    <button
+                        class="join-item btn btn-sm rounded-full border-[#d8e1ec] bg-[#f4f7fb] px-4 text-xs font-bold text-[#99aac2]"
+                        data-prio-pick="LOW">LOW</button>
+                    <button
+                        class="join-item btn btn-sm rounded-full border-[#f2d6a8] bg-[#fff6ea] px-4 text-xs font-bold text-[#c38f37]"
+                        data-prio-pick="MED">MED</button>
+                    <button
+                        class="join-item btn btn-sm rounded-full border-[#efd0c8] bg-[#fff2ef] px-4 text-xs font-bold text-[#cf5a3f]"
+                        data-prio-pick="HIGH">HIGH</button>
+                </div>
+
+                <input id="new-due" type="date"
+                    class="input input-sm w-[180px] rounded-full border-[#d8e2ed] text-sm text-[#334772]" />
+            </div>
+
+            <input id="new-title" type="text" placeholder="Write your task here..."
+                class="input mt-3 h-12 w-full rounded-full border-[#d6deea] bg-white text-[26px] text-[#2f426c]" />
+
+            <div class="mt-3 flex items-center gap-2">
+                <button id="add-task-btn"
+                    class="btn h-12 min-h-0 flex-1 rounded-full border-0 text-lg font-bold normal-case text-white"
+                    style="background:var(--accent);box-shadow:0 12px 20px var(--accent-soft)">Add Task</button>
+                <button id="close-add" class="btn btn-circle h-12 w-12 border-0 text-[#9aabc2]"
+                    style="background:#eef2f7">x</button>
+            </div>
+        </section>
+
+        <section id="stats-panel" class="panel mt-5 p-4 sm:p-5">
+            <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div id="progress-ring" class="ring"><span id="progress-percent">0%</span></div>
+                    <div>
+                        <p id="progress-title" class="text-[30px] font-bold text-[#2f426c]">0 of 0 tasks done</p>
+                        <p id="progress-subtitle" class="text-[30px] text-[#9cafc8]">0 remaining</p>
+                    </div>
+                </div>
+                <button id="clear-done"
+                    class="btn h-11 min-h-0 rounded-full border-[#f2cfc8] bg-[#fff5f2] px-5 text-[26px] font-bold normal-case text-[#cf5a3f] hide">
+                    Clear done
+                </button>
+            </div>
+        </section>
+
+        <section class="mt-4">
+            <button id="focus-enter"
+                class="btn h-12 min-h-0 rounded-full border-0 px-6 text-[26px] font-bold normal-case text-[#2f4a77]"
+                style="background:#e7edf2">
+                Enter Focus Mode
+            </button>
+        </section>
+
+        <section id="empty-card" class="panel mt-4 p-6 text-center">
+            <p class="mb-1 text-[36px]">*</p>
+            <p class="text-[30px] font-semibold text-[#93a6c4]">Your board is clear.</p>
+            <p class="text-[30px] text-[#98abc6]">Start a session or quick-add a task.</p>
+            <a href="{{ url_for('session_page') }}"
+                class="btn mt-4 h-12 min-h-0 rounded-full border-0 px-8 text-[28px] font-bold normal-case text-white"
+                style="background:var(--accent);box-shadow:0 12px 20px var(--accent-soft)">New Session</a>
+        </section>
+
+        <section class="mt-5">
+            <div class="mb-3 flex items-center gap-2">
+                <h2 class="text-[32px] font-extrabold tracking-wide text-[#2f4a77]">TO DO</h2>
+                <span id="todo-count"
+                    class="rounded-full bg-[#e7edf5] px-2 py-0.5 text-[22px] font-bold text-[#7d90b0]">0</span>
+            </div>
+
+            <div id="todo-list" class="space-y-3"></div>
+
+            <button id="show-more-btn"
+                class="btn mt-3 h-12 min-h-0 w-full rounded-xl border border-dashed border-[#d6e0ea] bg-transparent text-[26px] font-semibold normal-case text-[#6f86ac] hide">
+                Show more tasks
+            </button>
+        </section>
+
+        <section id="done-wrap" class="mt-5 hide">
+            <div class="mb-2 flex items-center justify-between">
+                <h3 id="done-title" class="text-[30px] font-extrabold tracking-wide text-[#6f84ad]">DONE 0</h3>
+            </div>
+            <div id="done-list" class="space-y-2"></div>
+        </section>
+
+        <section class="panel mt-6 mb-8 p-4 sm:p-5">
+            <p class="mb-2 text-[26px] font-bold text-[#6f84ad]">Email task summary</p>
+            <div class="flex items-center gap-2">
+                <input id="email-summary" type="email"
+                    class="input h-12 flex-1 rounded-full border-[#d7e1eb] bg-white text-[26px] text-[#2f426c]"
+                    placeholder="you@email.com" />
+                <button id="send-email"
+                    class="btn h-12 min-h-0 rounded-full border-0 px-6 text-[28px] font-bold normal-case text-white"
+                    style="background:#2f4a77">Send</button>
+            </div>
+        </section>
+    </main>
+
+    <div id="focus-overlay" class="focus-overlay">
+        <div class="shell mobile-wrap flex items-center justify-between py-3">
+            <button id="focus-exit" class="btn btn-ghost px-0 text-[26px] font-semibold normal-case text-[#a3b2c8]">Exit
+                Focus</button>
+            <p id="focus-counter" class="text-[26px] font-semibold text-[#a9b8cc]">1 of 1</p>
+        </div>
+
+        <div class="shell mobile-wrap pt-2">
+            <div id="focus-dots" class="focus-dots"></div>
+        </div>
+
+        <div class="mt-auto pb-10">
+            <div id="focus-card" class="focus-card mx-auto p-6">
+                <div class="mb-5 flex items-center justify-between gap-2">
+                    <span id="focus-prio" class="prio-pill low">LOW</span>
+                    <span id="focus-dur" class="text-[22px] font-semibold text-[#b0bed1]">~5 min</span>
+                </div>
+                <h3 id="focus-title" class="mb-6 text-[42px] font-extrabold leading-tight text-[#101a2c]">Task title
+                </h3>
+                <button id="focus-done"
+                    class="btn h-14 min-h-0 w-full rounded-full border-0 text-xl font-bold normal-case text-white">Mark
+                    as Done</button>
+                <button id="focus-next"
+                    class="btn mt-3 h-14 min-h-0 w-full rounded-full border-0 bg-[#eef1f6] text-xl font-bold normal-case text-[#8ea3c2]">Next
+                    Task</button>
+            </div>
+        </div>
+    </div>
+
+    <dialog id="priority-modal" class="modal">
+        <div class="modal-box w-11/12 max-w-md rounded-3xl border-0 p-0 shadow-2xl">
+            <div class="p-6">
+                <div class="mb-4 flex items-start justify-between">
+                    <div>
+                        <h3 class="text-2xl font-bold text-[#334772]">Priority Weights</h3>
+                        <p class="text-sm font-semibold text-[#a2b1c5]">Affects how tasks are scored</p>
+                        <p class="mt-2 text-sm text-[#a8b7cb]">1 = lowest, 5 = highest priority</p>
+                    </div>
+                    <form method="dialog">
+                        <button class="btn btn-circle btn-ghost btn-sm text-slate-400">x</button>
+                    </form>
+                </div>
+
+                <div id="weight-list" class="space-y-3"></div>
+
+                <div class="mt-6">
+                    <button id="save-weights"
+                        class="btn h-14 min-h-0 w-full rounded-full border-0 text-xl font-bold normal-case text-white"
+                        style="background:var(--accent);box-shadow:0 12px 22px var(--accent-soft)">Save Changes</button>
+                </div>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    </dialog>
+
+    <script id="dashboard-seed" type="application/json">{{ dashboard_seed | tojson }}</script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const seedNode = document.getElementById("dashboard-seed");
+            const seed = seedNode ? JSON.parse(seedNode.textContent) : {
+                user: { name: "sagesse", email: "sagesse@gmail.com" },
+                quotes: ["Progress, not perfection."],
+                tasks: [],
+                priorityWeights: {
+                    Work: 3,
+                    Health: 3,
+                    Relationships: 3,
+                    Finance: 3,
+                    "Personal Growth": 2,
+                    Spirituality: 2,
+                    Family: 3,
+                },
+            };
+
+            const PRIORITY_ORDER = { HIGH: 3, MED: 2, LOW: 1 };
+            const CAT_KEY = {
+                Work: "cat-work",
+                Health: "cat-health",
+                Relationships: "cat-rel",
+                Finance: "cat-fin",
+                "Personal Growth": "cat-grow",
+                Spirituality: "cat-spirit",
+                Family: "cat-family",
+            };
+            const CAT_ICON = {
+                Work: "briefcase",
+                Health: "leaf",
+                Relationships: "bubble",
+                Finance: "coin",
+                "Personal Growth": "chart",
+                Spirituality: "lotus",
+                Family: "home",
+            };
+
+            const user = seed.user || { name: "sagesse", email: "sagesse@gmail.com" };
+            const quotes = Array.isArray(seed.quotes) && seed.quotes.length ? seed.quotes : ["Progress, not perfection."];
+            let tasks = Array.isArray(seed.tasks) ? seed.tasks.map((t) => ({ ...t })) : [];
+            const weights = { ...(seed.priorityWeights || {}) };
+
+            let quoteIndex = 0;
+            let showAll = false;
+            let newTaskPriority = "MED";
+            let focusIndex = 0;
+
+            const heroName = document.getElementById("hero-name");
+            const userNameTop = document.getElementById("user-name-top");
+            const userNameMenu = document.getElementById("user-name-menu");
+            const userEmailMenu = document.getElementById("user-email-menu");
+
+            const quoteText = document.getElementById("quote-text");
+            const refreshQuote = document.getElementById("refresh-quote");
+
+            const userMenuBtn = document.getElementById("user-menu-btn");
+            const userDropdown = document.getElementById("user-dropdown");
+            const openPrioritySettings = document.getElementById("open-priority-settings");
+            const priorityModal = document.getElementById("priority-modal");
+
+            const addTaskCard = document.getElementById("add-task-card");
+            const openAdd = document.getElementById("open-add");
+            const closeAdd = document.getElementById("close-add");
+            const newTitle = document.getElementById("new-title");
+            const newDuration = document.getElementById("new-duration");
+            const newCategory = document.getElementById("new-category");
+            const newDue = document.getElementById("new-due");
+            const addTaskBtn = document.getElementById("add-task-btn");
+            const prioPicks = Array.from(document.querySelectorAll("[data-prio-pick]"));
+
+            const statsPanel = document.getElementById("stats-panel");
+            const emptyCard = document.getElementById("empty-card");
+            const todoCount = document.getElementById("todo-count");
+            const todoList = document.getElementById("todo-list");
+            const showMoreBtn = document.getElementById("show-more-btn");
+            const doneWrap = document.getElementById("done-wrap");
+            const doneTitle = document.getElementById("done-title");
+            const doneList = document.getElementById("done-list");
+            const clearDoneBtn = document.getElementById("clear-done");
+
+            const progressRing = document.getElementById("progress-ring");
+            const progressPercent = document.getElementById("progress-percent");
+            const progressTitle = document.getElementById("progress-title");
+            const progressSubtitle = document.getElementById("progress-subtitle");
+
+            const emailSummary = document.getElementById("email-summary");
+            const sendEmail = document.getElementById("send-email");
+
+            const focusEnter = document.getElementById("focus-enter");
+            const focusOverlay = document.getElementById("focus-overlay");
+            const focusExit = document.getElementById("focus-exit");
+            const focusCounter = document.getElementById("focus-counter");
+            const focusDots = document.getElementById("focus-dots");
+            const focusCard = document.getElementById("focus-card");
+            const focusPrio = document.getElementById("focus-prio");
+            const focusDur = document.getElementById("focus-dur");
+            const focusTitle = document.getElementById("focus-title");
+            const focusDone = document.getElementById("focus-done");
+            const focusNext = document.getElementById("focus-next");
+
+            const weightList = document.getElementById("weight-list");
+            const saveWeights = document.getElementById("save-weights");
+
+            function applyUserIdentity() {
+                heroName.textContent = user.name;
+                userNameTop.textContent = user.name;
+                userNameMenu.textContent = user.name;
+                userEmailMenu.textContent = user.email;
+                emailSummary.value = user.email;
+            }
+
+            function getOpenTasks() {
+                return tasks
+                    .filter((t) => !t.done)
+                    .sort((a, b) => {
+                        const d = PRIORITY_ORDER[b.priority] - PRIORITY_ORDER[a.priority];
+                        if (d !== 0) {
+                            return d;
+                        }
+                        return a.id - b.id;
+                    });
+            }
+
+            function getDoneTasks() {
+                return tasks.filter((t) => t.done);
+            }
+
+            function prioClass(priority) {
+                return String(priority || "LOW").toLowerCase();
+            }
+
+            function categoryChip(category) {
+                const key = CAT_KEY[category] || "cat-work";
+                return `<span class=\"chip ${key}\">${CAT_ICON[category] || "dot"} ${category}</span>`;
+            }
+
+            function formatDue(due) {
+                if (!due) {
+                    return "date";
+                }
+                const dt = new Date(due + "T00:00:00");
+                if (Number.isNaN(dt.getTime())) {
+                    return due;
+                }
+                return dt.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+            }
+
+            function renderQuote() {
+                quoteText.textContent = `\"${quotes[quoteIndex % quotes.length]}\"`;
+            }
+
+            function nextQuote() {
+                quoteIndex = (quoteIndex + 1) % quotes.length;
+                renderQuote();
+            }
+
+            function setRing(percent) {
+                const deg = Math.round((Math.max(0, Math.min(100, percent)) / 100) * 360);
+                progressRing.style.background = `conic-gradient(var(--accent) ${deg}deg, #dce8e2 ${deg}deg)`;
+                progressPercent.textContent = `${Math.round(percent)}%`;
+            }
+
+            function renderSummary() {
+                const total = tasks.length;
+                const done = getDoneTasks().length;
+                const open = total - done;
+                const percent = total ? (done / total) * 100 : 0;
+
+                setRing(percent);
+                progressTitle.textContent = `${done} of ${total} tasks done`;
+                progressSubtitle.textContent = `${open} remaining`;
+
+                todoCount.textContent = String(open);
+
+                if (open === 0) {
+                    emptyCard.classList.remove("hide");
+                    focusEnter.classList.add("hide");
+                } else {
+                    emptyCard.classList.add("hide");
+                    focusEnter.classList.remove("hide");
+                }
+
+                if (done > 0) {
+                    doneWrap.classList.remove("hide");
+                    clearDoneBtn.classList.remove("hide");
+                } else {
+                    doneWrap.classList.add("hide");
+                    clearDoneBtn.classList.add("hide");
+                }
+            }
+
+            function renderTodo() {
+                const openTasks = getOpenTasks();
+                const visible = showAll ? openTasks : openTasks.slice(0, 3);
+
+                todoList.innerHTML = visible.map((task) => {
+                    const cls = prioClass(task.priority);
+                    const dueText = formatDue(task.due);
+                    const dueMuted = task.due ? "" : "opacity:.7";
+                    return `
+                        <article class=\"task-row ${cls}\" data-task-id=\"${task.id}\">
+                            <span class=\"dot ${cls}\"></span>
+                            <input type=\"checkbox\" class=\"checkbox checkbox-sm mt-1 border-[#d2ddeb]\" data-done-id=\"${task.id}\" />
+                            <div style=\"flex:1\">
+                                <p style=\"font-size:15px;font-weight:600;color:#2f426c;line-height:1.35\">${task.title}</p>
+                                <div style=\"margin-top:5px;display:flex;flex-wrap:wrap;gap:6px;align-items:center\">
+                                    <span class=\"chip\">${task.duration}</span>
+                                    ${categoryChip(task.category)}
+                                    <span class=\"chip\" style=\"${dueMuted}\">date ${dueText}</span>
+                                </div>
+                            </div>
+                            <div style=\"display:flex;align-items:center;gap:7px\">
+                                <select class=\"select select-xs rounded-full border-[#dce5ef] font-bold ${cls}\" data-prio-id=\"${task.id}\">
+                                    <option value=\"LOW\" ${task.priority === "LOW" ? "selected" : ""}>LOW</option>
+                                    <option value=\"MED\" ${task.priority === "MED" ? "selected" : ""}>MED</option>
+                                    <option value=\"HIGH\" ${task.priority === "HIGH" ? "selected" : ""}>HIGH</option>
+                                </select>
+                            </div>
+                        </article>
+                    `;
+                }).join("");
+
+                showMoreBtn.classList.toggle("hide", openTasks.length <= 3);
+                showMoreBtn.textContent = showAll ? "Show fewer tasks" : `Show ${openTasks.length - 3} more tasks`;
+
+                todoList.querySelectorAll("[data-done-id]").forEach((el) => {
+                    el.addEventListener("change", () => {
+                        const id = Number(el.getAttribute("data-done-id"));
+                        const task = tasks.find((t) => t.id === id);
+                        if (task) {
+                            task.done = true;
+                            renderAll();
+                        }
+                    });
+                });
+
+                todoList.querySelectorAll("[data-prio-id]").forEach((el) => {
+                    el.addEventListener("change", () => {
+                        const id = Number(el.getAttribute("data-prio-id"));
+                        const task = tasks.find((t) => t.id === id);
+                        if (task) {
+                            task.priority = el.value;
+                            renderAll();
+                        }
+                    });
+                });
+            }
+
+            function renderDone() {
+                const doneTasks = getDoneTasks();
+                doneTitle.textContent = `DONE ${doneTasks.length}`;
+                doneList.innerHTML = doneTasks.map((task) => `
+                    <article class=\"task-row low\" style=\"opacity:.85\">
+                        <span class=\"dot low\"></span>
+                        <span style=\"font-size:14px;font-weight:600;color:#7086ab;line-height:1.4\">${task.title}</span>
+                    </article>
+                `).join("");
+            }
+
+            function stylePriorityPickButtons() {
+                prioPicks.forEach((btn) => {
+                    const active = btn.getAttribute("data-prio-pick") === newTaskPriority;
+                    if (active) {
+                        btn.style.boxShadow = "0 0 0 2px rgba(51, 71, 114, .22)";
+                    } else {
+                        btn.style.boxShadow = "none";
+                    }
+                });
+            }
+
+            function renderWeights() {
+                const entries = Object.entries(weights);
+                weightList.innerHTML = entries.map(([label, value]) => {
+                    const btns = [1, 2, 3, 4, 5].map((n) => {
+                        const active = n === value;
+                        const cls = active ? "priority-btn active" : "priority-btn";
+                        return `<button class=\"${cls}\" data-w-label=\"${label}\" data-w-num=\"${n}\">${n}</button>`;
+                    }).join("");
+
+                    return `
+                        <div style=\"display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px\">
+                            <span style=\"font-size:15px;font-weight:600;color:#334772\">${CAT_ICON[label] || "dot"} ${label}</span>
+                            <div style=\"display:flex;gap:6px\">${btns}</div>
+                        </div>
+                    `;
+                }).join("");
+
+                weightList.querySelectorAll("[data-w-num]").forEach((btn) => {
+                    btn.addEventListener("click", () => {
+                        const label = btn.getAttribute("data-w-label");
+                        const num = Number(btn.getAttribute("data-w-num"));
+                        weights[label] = num;
+                        renderWeights();
+                    });
+                });
+            }
+
+            function openFocus() {
+                const openTasks = getOpenTasks();
+                if (!openTasks.length) {
+                    return;
+                }
+                focusIndex = 0;
+                focusOverlay.style.display = "flex";
+                renderFocus();
+            }
+
+            function closeFocus() {
+                focusOverlay.style.display = "none";
+            }
+
+            function renderFocus() {
+                const openTasks = getOpenTasks();
+                if (!openTasks.length) {
+                    closeFocus();
+                    renderAll();
+                    return;
+                }
+
+                if (focusIndex >= openTasks.length) {
+                    focusIndex = 0;
+                }
+
+                const task = openTasks[focusIndex];
+                const cls = prioClass(task.priority);
+                focusCounter.textContent = `${focusIndex + 1} of ${openTasks.length}`;
+                focusPrio.className = `prio-pill ${cls}`;
+                focusPrio.textContent = task.priority;
+                focusDur.textContent = task.duration;
+                focusTitle.textContent = task.title;
+                focusCard.className = `focus-card mx-auto p-6 ${cls}`;
+
+                if (cls === "high") {
+                    focusDone.style.background = "var(--high)";
+                } else if (cls === "med") {
+                    focusDone.style.background = "var(--med)";
+                } else {
+                    focusDone.style.background = "#89a3c5";
+                }
+
+                focusDots.innerHTML = openTasks.map((item, idx) => {
+                    const itemCls = prioClass(item.priority);
+                    return `<span class=\"${idx === focusIndex ? `active ${itemCls}` : ""}\"></span>`;
+                }).join("");
+            }
+
+            function toggleUserMenu(force) {
+                const show = typeof force === "boolean" ? force : userDropdown.classList.contains("hide");
+                userDropdown.classList.toggle("hide", !show);
+            }
+
+            function addTaskFromForm() {
+                const title = newTitle.value.trim();
+                if (!title) {
+                    newTitle.focus();
+                    return;
+                }
+
+                const nextId = tasks.length ? Math.max(...tasks.map((t) => t.id)) + 1 : 1;
+                tasks.push({
+                    id: nextId,
+                    title,
+                    duration: newDuration.value,
+                    category: newCategory.value,
+                    priority: newTaskPriority,
+                    due: newDue.value || "",
+                    done: false,
+                });
+
+                newTitle.value = "";
+                newDue.value = "";
+                showAll = false;
+                renderAll();
+            }
+
+            function renderAll() {
+                renderSummary();
+                renderTodo();
+                renderDone();
+                stylePriorityPickButtons();
+            }
+
+            refreshQuote.addEventListener("click", nextQuote);
+            setInterval(nextQuote, 9000);
+
+            openAdd.addEventListener("click", () => addTaskCard.classList.toggle("hide"));
+            closeAdd.addEventListener("click", () => addTaskCard.classList.add("hide"));
+            addTaskBtn.addEventListener("click", addTaskFromForm);
+
+            prioPicks.forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    newTaskPriority = btn.getAttribute("data-prio-pick");
+                    stylePriorityPickButtons();
+                });
+            });
+
+            showMoreBtn.addEventListener("click", () => {
+                showAll = !showAll;
+                renderTodo();
+            });
+
+            clearDoneBtn.addEventListener("click", () => {
+                tasks = tasks.filter((t) => !t.done);
+                renderAll();
+            });
+
+            sendEmail.addEventListener("click", () => {
+                const email = emailSummary.value.trim();
+                if (!email) {
+                    emailSummary.focus();
+                    return;
+                }
+                sendEmail.textContent = "Sent";
+                setTimeout(() => {
+                    sendEmail.textContent = "Send";
+                }, 1200);
+            });
+
+            focusEnter.addEventListener("click", openFocus);
+            focusExit.addEventListener("click", closeFocus);
+
+            focusDone.addEventListener("click", () => {
+                const openTasks = getOpenTasks();
+                const task = openTasks[focusIndex];
+                if (!task) {
+                    return;
+                }
+                const found = tasks.find((t) => t.id === task.id);
+                if (found) {
+                    found.done = true;
+                }
+                renderFocus();
+                renderAll();
+            });
+
+            focusNext.addEventListener("click", () => {
+                const openTasks = getOpenTasks();
+                if (!openTasks.length) {
+                    closeFocus();
+                    return;
+                }
+                focusIndex = (focusIndex + 1) % openTasks.length;
+                renderFocus();
+            });
+
+            userMenuBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                toggleUserMenu();
+            });
+
+            document.addEventListener("click", () => toggleUserMenu(false));
+
+            openPrioritySettings.addEventListener("click", () => {
+                toggleUserMenu(false);
+                renderWeights();
+                priorityModal.showModal();
+            });
+
+            saveWeights.addEventListener("click", () => {
+                priorityModal.close();
+            });
+
+            applyUserIdentity();
+            quoteIndex = Math.floor(Math.random() * quotes.length);
+            renderQuote();
+            renderAll();
+        });
+    </script>
+</body>
+
+</html>
