@@ -9,6 +9,33 @@
 body { font-family: "Poppins", sans-serif; }
 .hide { display: none !important; }
 
+.btn-soft-hover {
+    transition: background-color .16s ease, box-shadow .16s ease, color .16s ease, transform .16s ease;
+}
+
+.btn-soft-hover:hover {
+    box-shadow: 0 8px 16px rgba(61, 84, 123, .14);
+    filter: brightness(.97);
+}
+
+#show-more-btn {
+    transition: background-color .16s ease, border-color .16s ease, color .16s ease;
+}
+
+#show-more-btn:hover {
+    background: #f2f5f8;
+    border-color: #dbe3ec;
+    color: #8194ad;
+}
+
+.menu-item-hover {
+    transition: background-color .16s ease, color .16s ease;
+}
+
+.menu-item-hover:hover {
+    background: #f3f6fb;
+}
+
 /* Task rows -- priority left border */
 .task-row {
     border-radius: 14px;
@@ -52,29 +79,75 @@ body { font-family: "Poppins", sans-serif; }
 .prio-select {
     border-radius: 9999px;
     border: 1.5px solid;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
-    padding: 2px 18px 2px 8px;
+    padding: 3px 20px 3px 10px;
     font-family: inherit;
     cursor: pointer;
-    background: transparent;
+    appearance: auto;
 }
-.prio-select.high { color: var(--high); border-color: #f0ccc3; }
-.prio-select.med  { color: var(--med);  border-color: #f2d39b; }
-.prio-select.low  { color: #8ea4c3;     border-color: #d5e0ed; }
+.prio-select.high { color: var(--high); border-color: #f0ccc3; background: #fff3f0; }
+.prio-select.med  { color: var(--med);  border-color: #f2d39b; background: #fff8ee; }
+.prio-select.low  { color: #8ea4c3;     border-color: #d5e0ed; background: #f4f6f9; }
+
+.prio-select option {
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.task-delete-btn {
+    border: 0;
+    background: transparent;
+    color: #b6c3d4;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    cursor: pointer;
+}
+
+.task-delete-btn:hover {
+    color: #8ea2be;
+}
+
+.date-chip-btn {
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    cursor: pointer;
+}
+
+.date-chip-btn:hover {
+    background: #f1f5f9;
+    color: #6f85a8;
+}
+
+.task-date-input {
+    border: 1px solid #dce5ef;
+    border-radius: 9999px;
+    background: #fff;
+    color: #5f7396;
+    font-size: 11px;
+    font-family: inherit;
+    padding: 1px 8px;
+    height: 24px;
+}
+
+.task-date-input:focus {
+    outline: none;
+    border-color: #b6c7dd;
+}
 
 /* Progress ring -- default gray, JS applies conic-gradient when >0% */
 .ring {
-    width: 52px;
-    height: 52px;
+    width: 62px;
+    height: 62px;
     border-radius: 9999px;
     display: grid;
     place-items: center;
     background: #e8edf2;
 }
 .ring > span {
-    width: 40px;
-    height: 40px;
+    width: 48px;
+    height: 48px;
     border-radius: 9999px;
     display: grid;
     place-items: center;

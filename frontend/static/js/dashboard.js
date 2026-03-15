@@ -116,12 +116,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function applyUserIdentity() {
-        const initials = (user.name || "SG")
-            .split(" ")
-            .map((part) => part[0])
-            .join("")
-            .slice(0, 2)
-            .toUpperCase();
+        const compactName = String(user.name || "SG").replace(/\s+/g, "").trim();
+        const initials = (compactName.slice(0, 2) || "SG").toUpperCase();
 
         if (heroGreeting) heroGreeting.textContent = getGreeting();
         heroName.textContent = user.name;
@@ -228,23 +224,29 @@ document.addEventListener("DOMContentLoaded", () => {
         todoList.innerHTML = visible
             .map((task) => {
                 const cls = prioClass(task.priority);
+                const dueText = formatDue(task.due);
+                const dueValue = task.due || "";
                 return `
                     <article class="task-row ${cls}" data-task-id="${task.id}">
                         <span class="dot ${cls}"></span>
                         <input type="checkbox" class="checkbox checkbox-sm mt-1 border-[#d2ddeb]" data-done-id="${task.id}" />
                         <div style="flex:1">
-                            <p style="font-size:13px;font-weight:600;color:#2f426c;line-height:1.35;margin:0">${task.title}</p>
+                            <p style="font-size:14px;font-weight:600;color:#2f426c;line-height:1.35;margin:0">${task.title}</p>
                             <div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:5px;align-items:center">
                                 <span class="meta-chip">${task.duration}</span>
                                 ${categoryChip(task.category)}
-                                <span class="meta-chip">&#128197; ${formatDue(task.due)}</span>
+                                <button type="button" class="meta-chip date-chip-btn" data-date-btn-id="${task.id}" title="Edit due date">&#128197; ${dueText}</button>
+                                <input type="date" class="task-date-input hide" data-date-input-id="${task.id}" value="${dueValue}" />
                             </div>
                         </div>
-                        <select class="prio-select ${cls}" data-prio-id="${task.id}">
-                            <option value="LOW" ${task.priority === "LOW" ? "selected" : ""}>LOW</option>
-                            <option value="MED" ${task.priority === "MED" ? "selected" : ""}>MED</option>
-                            <option value="HIGH" ${task.priority === "HIGH" ? "selected" : ""}>HIGH</option>
-                        </select>
+                        <div style="display:flex;align-items:center;gap:7px">
+                            <select class="prio-select ${cls}" data-prio-id="${task.id}">
+                                <option value="LOW" style="color:#8ea4c3;background:#f4f6f9" ${task.priority === "LOW" ? "selected" : ""}>LOW</option>
+                                <option value="MED" style="color:#c38f37;background:#fff8ee" ${task.priority === "MED" ? "selected" : ""}>MED</option>
+                                <option value="HIGH" style="color:#cf5a3f;background:#fff3f0" ${task.priority === "HIGH" ? "selected" : ""}>HIGH</option>
+                            </select>
+                            <button type="button" class="task-delete-btn" data-delete-open-id="${task.id}" title="Delete task">&#10005;</button>
+                        </div>
                     </article>
                 `;
             })
@@ -274,6 +276,42 @@ document.addEventListener("DOMContentLoaded", () => {
                     task.priority = el.value;
                     renderAll();
                 }
+            });
+        });
+
+        todoList.querySelectorAll("[data-delete-open-id]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const id = Number(btn.getAttribute("data-delete-open-id"));
+                tasks = tasks.filter((task) => task.id !== id);
+                renderAll();
+            });
+        });
+
+        todoList.querySelectorAll("[data-date-btn-id]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const id = btn.getAttribute("data-date-btn-id");
+                const input = todoList.querySelector(`[data-date-input-id="${id}"]`);
+                if (!input) {
+                    return;
+                }
+                input.classList.remove("hide");
+                input.showPicker?.();
+                input.focus();
+            });
+        });
+
+        todoList.querySelectorAll("[data-date-input-id]").forEach((input) => {
+            input.addEventListener("change", () => {
+                const id = Number(input.getAttribute("data-date-input-id"));
+                const task = tasks.find((item) => item.id === id);
+                if (task) {
+                    task.due = input.value || "";
+                    renderAll();
+                }
+            });
+
+            input.addEventListener("blur", () => {
+                input.classList.add("hide");
             });
         });
     }
