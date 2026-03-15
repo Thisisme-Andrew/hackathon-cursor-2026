@@ -1,6 +1,6 @@
 from datetime import datetime
 from app.db.mongo import tasks_collection
-from app.models.task_model import task_model, TASK_CATEGORIES
+from app.models.task_model import task_model, TASK_CATEGORIES, TASK_PRIORITIES
 
 
 def _parse_dt(value):
@@ -40,6 +40,10 @@ def create_task(data):
     if category not in TASK_CATEGORIES:
         return {"error": f"category must be one of: {', '.join(sorted(TASK_CATEGORIES))}"}
 
+    priority = data.get("priority", "MED")
+    if priority not in TASK_PRIORITIES:
+        return {"error": f"priority must be one of: {', '.join(sorted(TASK_PRIORITIES))}"}
+
     task = task_model(
         userId=userId,
         title=title,
@@ -49,6 +53,7 @@ def create_task(data):
         importance=importance,
         status=data.get("status", False),
         category=category,
+        priority=priority,
         estimatedTimeToComplete=data.get("estimatedTimeToComplete"),
         isOpenLoop=data.get("isOpenLoop", False),
         dueAt=_parse_dt(data.get("dueAt")),
@@ -69,7 +74,7 @@ def update_task(taskId, data):
     # Build update dict from provided fields only (partial update)
     updatable = (
         "title", "description", "urgency", "effort", "importance",
-        "status", "category", "estimatedTimeToComplete", "isOpenLoop", "dueAt",
+        "status", "category", "priority", "estimatedTimeToComplete", "isOpenLoop", "dueAt",
         "completedAt", "nextAction",
     )
     update = {}
@@ -86,6 +91,11 @@ def update_task(taskId, data):
                     continue  # Skip invalid category; keep existing value
                 if val not in TASK_CATEGORIES:
                     return {"error": f"category must be one of: {', '.join(sorted(TASK_CATEGORIES))}"}
+            if key == "priority":
+                if val is None:
+                    continue
+                if val not in TASK_PRIORITIES:
+                    return {"error": f"priority must be one of: {', '.join(sorted(TASK_PRIORITIES))}"}
             update[key] = val
 
     if not update:
@@ -145,6 +155,7 @@ def _task_to_response(task):
         "importance": task["importance"],
         "status": task["status"],
         "category": task.get("category", "Work"),
+        "priority": task.get("priority", "MED"),
         "isOpenLoop": task.get("isOpenLoop", False),
         "createdAt": _serialize_dt(task.get("createdAt")),
         "dueAt": _serialize_dt(task.get("dueAt")),

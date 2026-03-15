@@ -1,6 +1,8 @@
 import os
 from flask import Flask, render_template, request
 
+from config import Config
+
 
 def create_app():
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -75,6 +77,7 @@ def create_app():
                 "urgent": "Everything feels urgent and I need a clear first action right now.",
             },
             "steps": 4,
+            "user": Config.DEMO_USER,
         }
         return render_template(
             "demo.html",
@@ -85,73 +88,16 @@ def create_app():
 
     @app.route("/dashboard")
     def dashboard_page():
+        # Same demo user as session – tasks saved from /session appear here
         dashboard_seed = {
-            "user": {
-                "name": "sagesse",
-                "email": "sagesse@gmail.com",
-            },
+            "user": Config.DEMO_USER,
             "quotes": [
                 "Progress, not perfection.",
                 "Clarity comes from action, not thought.",
                 "Your future self is cheering you on.",
                 "Small steps still move you forward.",
             ],
-            "tasks": [
-                {
-                    "id": 1,
-                    "title": "Open project document - write one sentence",
-                    "duration": "~5 min",
-                    "category": "Work",
-                    "priority": "HIGH",
-                    "due": "",
-                    "done": False,
-                },
-                {
-                    "id": 2,
-                    "title": "Reply to manager's email",
-                    "duration": "~5 min",
-                    "category": "Work",
-                    "priority": "MED",
-                    "due": "",
-                    "done": False,
-                },
-                {
-                    "id": 3,
-                    "title": "Set a 25-minute Pomodoro timer",
-                    "duration": "~1 min",
-                    "category": "Work",
-                    "priority": "LOW",
-                    "due": "",
-                    "done": False,
-                },
-                {
-                    "id": 4,
-                    "title": "Write section outline (bullet points only)",
-                    "duration": "~20 min",
-                    "category": "Work",
-                    "priority": "LOW",
-                    "due": "",
-                    "done": False,
-                },
-                {
-                    "id": 5,
-                    "title": "Drink water and take a 5-min walk",
-                    "duration": "~10 min",
-                    "category": "Health",
-                    "priority": "LOW",
-                    "due": "",
-                    "done": False,
-                },
-                {
-                    "id": 6,
-                    "title": "Deep work block: draft first full section",
-                    "duration": "~25 min",
-                    "category": "Work",
-                    "priority": "LOW",
-                    "due": "",
-                    "done": False,
-                },
-            ],
+            "tasks": [],
             "priorityWeights": {
                 "Work": 3,
                 "Health": 3,

@@ -37,10 +37,74 @@ document.addEventListener("DOMContentLoaded", () => {
         Family: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg>',
     };
 
-    const user = seed.user || { name: "sagesse", email: "sagesse@gmail.com" };
+    const user = seed.user || { id: "sagesse", name: "sagesse", email: "sagesse@gmail.com" };
+    const userId = user.id || user.email || "sagesse";
     const quotes = Array.isArray(seed.quotes) && seed.quotes.length ? seed.quotes : ["Progress, not perfection."];
     let tasks = Array.isArray(seed.tasks) ? seed.tasks.map((t) => ({ ...t })) : [];
     const weights = { ...(seed.priorityWeights || {}) };
+
+    const API_BASE = "/tasks";
+
+    function apiTaskToFrontend(api) {
+        const dueAt = api.dueAt;
+        const due = dueAt ? dueAt.slice(0, 10) : "";
+        return {
+            id: api.taskId,
+            title: api.title,
+            duration: api.estimatedTimeToComplete || "~15 min",
+            category: api.category || "Work",
+            priority: api.priority || "MED",
+            due,
+            done: !!api.status,
+        };
+    }
+
+    async function fetchTasks() {
+        try {
+            const res = await fetch(`${API_BASE}/?userId=${encodeURIComponent(userId)}`);
+            const data = await res.json();
+            if (Array.isArray(data)) {
+                tasks = data.map(apiTaskToFrontend);
+            }
+        } catch (_) {
+            /* keep seed/empty tasks */
+        }
+    }
+
+    async function postTask(body) {
+        const res = await fetch(`${API_BASE}/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        return data;
+    }
+
+    async function patchTask(taskId, body) {
+        const res = await fetch(`${API_BASE}/${taskId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        return data;
+    }
+
+    async function deleteTask(taskId) {
+        const res = await fetch(`${API_BASE}/${taskId}`, { method: "DELETE" });
+        const data = await res.json();
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        return data;
+    }
 
     let quoteIndex = 0;
     let showAll = false;
@@ -136,7 +200,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (diff !== 0) {
                     return diff;
                 }
-                return a.id - b.id;
+                return String(a.id).localeCompare(String(b.id));
             });
     }
 
@@ -259,31 +323,48 @@ document.addEventListener("DOMContentLoaded", () => {
 
         todoList.querySelectorAll("[data-done-id]").forEach((el) => {
             el.addEventListener("change", () => {
-                const id = Number(el.getAttribute("data-done-id"));
-                const task = tasks.find((item) => item.id === id);
+                const id = el.getAttribute("data-done-id");
+                const task = tasks.find((item) => String(item.id) === id);
                 if (task) {
                     task.done = true;
                     renderAll();
+                    patchTask(id, { status: true }).catch(() => {
+                        task.done = false;
+                        renderAll();
+                    });
                 }
             });
         });
 
         todoList.querySelectorAll("[data-prio-id]").forEach((el) => {
             el.addEventListener("change", () => {
-                const id = Number(el.getAttribute("data-prio-id"));
-                const task = tasks.find((item) => item.id === id);
+                const id = el.getAttribute("data-prio-id");
+                const task = tasks.find((item) => String(item.id) === id);
                 if (task) {
+                    const prev = task.priority;
                     task.priority = el.value;
                     renderAll();
+                    patchTask(id, { priority: el.value }).catch(() => {
+                        task.priority = prev;
+                        renderAll();
+                    });
                 }
             });
         });
 
         todoList.querySelectorAll("[data-delete-open-id]").forEach((btn) => {
             btn.addEventListener("click", () => {
-                const id = Number(btn.getAttribute("data-delete-open-id"));
-                tasks = tasks.filter((task) => task.id !== id);
-                renderAll();
+                const id = btn.getAttribute("data-delete-open-id");
+                const task = tasks.find((item) => String(item.id) === id);
+                if (task) {
+                    const idx = tasks.indexOf(task);
+                    tasks = tasks.filter((t) => String(t.id) !== id);
+                    renderAll();
+                    deleteTask(id).catch(() => {
+                        tasks.splice(idx, 0, task);
+                        renderAll();
+                    });
+                }
             });
         });
 
@@ -302,11 +383,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
         todoList.querySelectorAll("[data-date-input-id]").forEach((input) => {
             input.addEventListener("change", () => {
-                const id = Number(input.getAttribute("data-date-input-id"));
-                const task = tasks.find((item) => item.id === id);
+                const id = input.getAttribute("data-date-input-id");
+                const task = tasks.find((item) => String(item.id) === id);
                 if (task) {
+                    const prev = task.due;
                     task.due = input.value || "";
+                    const dueAt = input.value ? `${input.value}T00:00:00Z` : null;
                     renderAll();
+                    patchTask(id, { dueAt }).catch(() => {
+                        task.due = prev;
+                        renderAll();
+                    });
                 }
             });
 
@@ -338,9 +425,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
         doneList.querySelectorAll("[data-delete-id]").forEach((btn) => {
             btn.addEventListener("click", () => {
-                const id = Number(btn.getAttribute("data-delete-id"));
-                tasks = tasks.filter((t) => t.id !== id);
-                renderAll();
+                const id = btn.getAttribute("data-delete-id");
+                const task = tasks.find((t) => String(t.id) === id);
+                if (task) {
+                    const idx = tasks.indexOf(task);
+                    tasks = tasks.filter((t) => String(t.id) !== id);
+                    renderAll();
+                    deleteTask(id).catch(() => {
+                        tasks.splice(idx, 0, task);
+                        renderAll();
+                    });
+                }
             });
         });
     }
@@ -446,23 +541,49 @@ document.addEventListener("DOMContentLoaded", () => {
         userDropdown.classList.toggle("hide", !show);
     }
 
-    function addTaskFromForm() {
+    async function addTaskFromForm() {
         const title = newTitle.value.trim();
         if (!title) {
             newTitle.focus();
             return;
         }
 
-        const nextId = tasks.length ? Math.max(...tasks.map((task) => task.id)) + 1 : 1;
-        tasks.push({
-            id: nextId,
-            title,
-            duration: newDuration.value,
-            category: newCategory.value,
-            priority: newTaskPriority,
-            due: newDue.value || "",
-            done: false,
-        });
+        const duration = newDuration.value || "~15 min";
+        const category = newCategory.value || "Work";
+        const due = newDue.value || "";
+        const dueAt = due ? `${due}T00:00:00Z` : null;
+
+        try {
+            const created = await postTask({
+                userId,
+                title,
+                category,
+                priority: newTaskPriority,
+                estimatedTimeToComplete: duration,
+                dueAt,
+            });
+            if (created.taskId) {
+                tasks.push({
+                    id: created.taskId,
+                    title,
+                    duration,
+                    category,
+                    priority: newTaskPriority,
+                    due,
+                    done: false,
+                });
+            }
+        } catch (err) {
+            tasks.push({
+                id: `local-${Date.now()}`,
+                title,
+                duration,
+                category,
+                priority: newTaskPriority,
+                due,
+                done: false,
+            });
+        }
 
         newTitle.value = "";
         newDue.value = "";
@@ -504,7 +625,15 @@ document.addEventListener("DOMContentLoaded", () => {
         renderDone();
     });
 
-    clearDoneBtn.addEventListener("click", () => {
+    clearDoneBtn.addEventListener("click", async () => {
+        const doneTasks = getDoneTasks();
+        for (const task of doneTasks) {
+            try {
+                await deleteTask(String(task.id));
+            } catch (_) {
+                /* ignore */
+            }
+        }
         tasks = tasks.filter((task) => !task.done);
         doneExpanded = false;
         renderAll();
@@ -532,13 +661,17 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        const found = tasks.find((item) => item.id === task.id);
+        const found = tasks.find((item) => String(item.id) === String(task.id));
         if (found) {
             found.done = true;
+            patchTask(String(task.id), { status: true }).then(() => {
+                renderFocus();
+                renderAll();
+            }).catch(() => {
+                renderFocus();
+                renderAll();
+            });
         }
-
-        renderFocus();
-        renderAll();
     });
 
     focusNext.addEventListener("click", () => {
@@ -573,6 +706,8 @@ document.addEventListener("DOMContentLoaded", () => {
     quoteIndex = Math.floor(Math.random() * quotes.length);
     renderQuote();
     renderAll();
+
+    fetchTasks().then(() => renderAll()).catch(() => {});
 
     const openTeamBtn = document.getElementById("open-team");
     const teamDialog = document.getElementById("team-dialog");

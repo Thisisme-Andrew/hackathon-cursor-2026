@@ -11,6 +11,8 @@ TASK_CATEGORIES = frozenset({
     "Family",
 })
 
+TASK_PRIORITIES = frozenset({"HIGH", "MED", "LOW"})
+
 
 def task_model(
     userId,
@@ -21,6 +23,7 @@ def task_model(
     importance,
     status=False,
     category="Work",
+    priority="MED",
     estimatedTimeToComplete=None,
     isOpenLoop=False,
     dueAt=None,
@@ -39,6 +42,7 @@ def task_model(
         "importance": importance,
         "status": status,
         "category": category,
+        "priority": priority,
         "isOpenLoop": isOpenLoop,
         "createdAt": now,
         "dueAt": dueAt,

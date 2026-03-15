@@ -7,6 +7,22 @@ document.addEventListener("DOMContentLoaded", () => {
         steps: 4,
     };
 
+    const isSessionMode = document.body.dataset.sessionMode === "1";
+    const userId = seed.user?.id || seed.user?.email || "demo-user-123";
+    const boardHref = document.body.dataset.boardHref || "/dashboard";
+    const API_BASE = "/tasks";
+
+    async function postTask(body) {
+        const res = await fetch(`${API_BASE}/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        return data;
+    }
+
     const body = document.body;
     const modeIcon = document.getElementById("mode-icon");
     const modeText = document.getElementById("mode-text");
@@ -56,6 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let recordSecondsLeft = 30;
     let currentStep = 1;
     let muted = false;
+    let resultTasksForSave = [];
 
     function updateStepUi() {
         stepLabel.textContent = `${currentStep} / ${totalSteps}`;
@@ -219,6 +236,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const resultTasks = isUrgent
             ? DEMO_TASKS.map((task) => ({ ...task, prio: "HIGH" }))
             : DEMO_TASKS;
+        resultTasksForSave = resultTasks;
 
         // Populate theme chips
         const themeEl = document.getElementById("theme-chips");
@@ -375,5 +393,40 @@ document.addEventListener("DOMContentLoaded", () => {
     const teamDialog = document.getElementById("team-dialog");
     if (openTeamBtn && teamDialog) {
         openTeamBtn.addEventListener("click", () => teamDialog.showModal());
+    }
+
+    const saveToBoardBtn = document.getElementById("save-to-board-btn");
+    if (isSessionMode && saveToBoardBtn) {
+        saveToBoardBtn.addEventListener("click", async (e) => {
+            e.preventDefault();
+            const originalText = saveToBoardBtn.textContent;
+            saveToBoardBtn.textContent = "Saving…";
+            saveToBoardBtn.style.pointerEvents = "none";
+
+            try {
+                for (let i = 0; i < resultTasksForSave.length; i++) {
+                    const t = resultTasksForSave[i];
+                    const dueInput = document.getElementById("dt-" + i);
+                    const dueAt = dueInput?.value ? `${dueInput.value}T12:00:00Z` : undefined;
+                    await postTask({
+                        userId,
+                        title: t.name,
+                        category: t.cat,
+                        priority: t.prio,
+                        estimatedTimeToComplete: t.dur,
+                        dueAt,
+                    });
+                }
+                window.location.href = boardHref;
+            } catch (err) {
+                saveToBoardBtn.textContent = originalText;
+                saveToBoardBtn.style.pointerEvents = "";
+                saveToBoardBtn.insertAdjacentHTML(
+                    "afterend",
+                    `<p class="mt-2 text-sm text-red-600" id="save-error">Failed to save: ${err.message}</p>`
+                );
+                setTimeout(() => document.getElementById("save-error")?.remove(), 4000);
+            }
+        });
     }
 });
