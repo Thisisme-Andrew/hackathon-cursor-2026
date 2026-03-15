@@ -144,34 +144,105 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Temporary sample login credentials for local frontend demo only.
-    // Remove this block when backend auth/database integration is ready.
-    const demoLogin = {
-        email: "admin@gmail.com",
-        password: "123456",
-    };
+    /**
+     * Hash password with SHA-256 before sending to backend.
+     * Returns hex-encoded hash string.
+     */
+    async function hashPassword(plainPassword) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(plainPassword);
+        const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    const API_BASE = "/users";
 
     tabLogin.addEventListener("click", showLogin);
     tabSignup.addEventListener("click", showSignupStep1);
     document.getElementById("go-signup").addEventListener("click", showSignupStep1);
 
-    document.getElementById("login-submit").addEventListener("click", () => {
+    document.getElementById("login-submit").addEventListener("click", async () => {
         const email = document.getElementById("login-email").value.trim();
         const password = document.getElementById("login-password").value.trim();
 
-        if (email === demoLogin.email && password === demoLogin.password) {
-            setMessage("Demo login successful.", true);
-        } else {
-            setMessage("Invalid demo credentials. Try admin@gmail.com / 123456", false);
+        if (!email || !password) {
+            setMessage("Email and password are required.", false);
+            return;
+        }
+
+        try {
+            const passwordHash = await hashPassword(password);
+            const res = await fetch(`${API_BASE}/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password: passwordHash }),
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                setMessage(`Welcome back, ${data.firstName || "User"}!`, true);
+            } else {
+                setMessage(data.error || "Login failed.", false);
+            }
+        } catch (err) {
+            setMessage("Network error. Please try again.", false);
         }
     });
 
     document.getElementById("signup-next").addEventListener("click", showSignupStep2);
     document.getElementById("signup-back").addEventListener("click", showSignupStep1);
 
-    document.getElementById("signup-create").addEventListener("click", () => {
-        setMessage("Demo account created locally. Backend integration pending.", true);
-        showSignupStep1();
+    document.getElementById("signup-create").addEventListener("click", async () => {
+        const firstName = document.getElementById("signup-firstname").value.trim();
+        const lastName = document.getElementById("signup-lastname").value.trim();
+        const email = document.getElementById("signup-email").value.trim();
+        const password = document.getElementById("signup-password").value.trim();
+
+        if (!firstName || !lastName || !email || !password) {
+            setMessage("All fields are required.", false);
+            return;
+        }
+        if (password.length < 6) {
+            setMessage("Password must be at least 6 characters.", false);
+            return;
+        }
+
+        try {
+            const passwordHash = await hashPassword(password);
+
+            const categoryWeights = {
+                work: priorityState.Work,
+                health: priorityState.Health,
+                relationships: priorityState.Relationships,
+                finance: priorityState.Finance,
+                personalGrowth: priorityState["Personal Growth"],
+                spirituality: priorityState.Spirituality,
+                family: priorityState.Family,
+            };
+
+            const res = await fetch(`${API_BASE}/create-user`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email,
+                    passwordHash,
+                    firstName,
+                    lastName,
+                    settings: { categoryWeights },
+                }),
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                setMessage("Account created successfully! You can log in now.", true);
+                showSignupStep1();
+            } else {
+                setMessage(data.error || "Signup failed.", false);
+            }
+        } catch (err) {
+            setMessage("Network error. Please try again.", false);
+        }
     });
 
     clearMessage();

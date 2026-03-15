@@ -30,7 +30,9 @@ if Config.MONGO_URI and Config.DB_NAME:
     )
     db = client[Config.DB_NAME]
     users_collection = db["users"]
+    tasks_collection = db["tasks"]
 else:
     client = None
     db = None
     users_collection = None
+    tasks_collection = None
