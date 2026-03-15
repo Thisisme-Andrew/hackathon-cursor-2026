@@ -15,7 +15,6 @@ function pauseBackgroundAudio() {
         backgroundAudio.pause();
     }
 }
-document.addEventListener("DOMContentLoaded", () => {
 document.addEventListener("DOMContentLoaded", async () => {
     const seedNode = document.getElementById("demo-seed");
     const seed = seedNode ? JSON.parse(seedNode.textContent) : {
@@ -426,6 +425,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function moveToNextQuestion() {
+        // Restore activity modal logic: show activity after Q2/Q4 (calm) or Q2 (urgent)
+        if (activityQueue.includes(currentStep)) {
+            const prompt = activeActivities[Math.floor(Math.random() * activeActivities.length)];
+            // Remove this step from the queue so it doesn't repeat
+            activityQueue = activityQueue.filter((n) => n !== currentStep);
+            showActivity(20, prompt);
+            return;
+        }
         if (currentStep < totalSteps) {
             currentStep += 1;
             updateStepUi();
@@ -943,4 +950,4 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         });
     }
-});
+})
