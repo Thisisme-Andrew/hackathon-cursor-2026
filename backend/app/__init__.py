@@ -1,6 +1,8 @@
 import os
 from flask import Flask, render_template, request
 
+from flask_cors import CORS
+
 
 def create_app():
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -9,6 +11,7 @@ def create_app():
         template_folder=os.path.join(project_root, "frontend", "templates"),
         static_folder=os.path.join(project_root, "frontend", "static"),
     )
+    CORS(app)
 
     @app.route("/")
     def home():
