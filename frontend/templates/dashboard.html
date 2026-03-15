@@ -34,7 +34,7 @@
                         class="btn-soft-hover btn btn-sm rounded-full border-0 bg-[#4d6892] px-3 text-sm font-bold text-white normal-case">
                         <span id="user-avatar"
                             class="mr-1 inline-grid h-6 w-6 place-items-center rounded-full bg-[#6d84ac] text-[10px] font-bold">SA</span>
-                        <span id="user-name-top" class="max-w-[80px] truncate">sagesse</span>
+                        <span id="user-name-top" class="max-w-[80px] truncate">User</span>
                     </button>
                     <div id="user-dropdown"
                         class="hide absolute right-0 top-11 z-40 w-48 rounded-2xl border border-slate-100 bg-white p-2 shadow-xl">
@@ -47,10 +47,10 @@
                             class="menu-item-hover mt-1 block w-full rounded-xl px-2 py-1.5 text-left text-sm font-semibold text-[#334772]">
                             &#9881; Priority Settings
                         </button>
-                        <a href="{{ url_for('home') }}"
-                            class="menu-item-hover mt-0.5 block rounded-xl px-2 py-1.5 text-sm font-semibold text-red-400">
+                        <button type="button" id="sign-out-btn"
+                            class="menu-item-hover mt-0.5 block w-full rounded-xl px-2 py-1.5 text-left text-sm font-semibold text-red-400">
                             Sign out
-                        </a>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -61,7 +61,7 @@
 
         <section class="pt-6">
             <h1 class="text-2xl font-extrabold leading-tight text-[#2f4a77] sm:text-3xl">
-                <span id="hero-greeting">Good evening</span>, <span id="hero-name">sagesse</span>. &#x1F44B;
+                <span id="hero-greeting">Good evening</span>, <span id="hero-name">User</span>. &#x1F44B;
             </h1>
             <div class="mt-1 flex items-center justify-between gap-2">
                 <p id="quote-text" class="text-sm font-medium italic text-slate-400">&ldquo;Progress, not
@@ -255,6 +255,7 @@
     {% include 'partials/team-dialog.html' %}
 
     <script id="dashboard-seed" type="application/json">{{ dashboard_seed | tojson }}</script>
+    <script src="{{ url_for('static', filename='js/auth-utils.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/dashboard.js') }}" defer></script>
 </body>
 

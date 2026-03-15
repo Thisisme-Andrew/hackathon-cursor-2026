@@ -30,6 +30,23 @@ def create_user(data):
     }
 
 
+def get_user_by_id(user_id):
+    """
+    Get a user by userId. Returns the user document (including settings)
+    or None if DB is not configured or user not found.
+    Callers can use this to read settings.categoryWeights for personalization.
+    """
+    if users_collection is None:
+        return None
+    user = users_collection.find_one({"userId": user_id})
+    if not user:
+        return None
+    return {
+        "userId": user.get("userId"),
+        "settings": user.get("settings", {}),
+    }
+
+
 def get_all_users():
     if users_collection is None:
         return {"error": "Database is not configured. Set MONGO_URI and DB_NAME."}

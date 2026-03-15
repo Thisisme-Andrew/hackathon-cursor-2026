@@ -1,4 +1,22 @@
-document.addEventListener("DOMContentLoaded", () => {
+// --- Background Audio Setup ---
+const backgroundAudio = new Audio("/static/audio/bg.mp3");
+backgroundAudio.loop = true;
+backgroundAudio.volume = 0.35; // Adjust as needed for subtlety
+
+function playBackgroundAudio() {
+    if (backgroundAudio.paused) {
+        backgroundAudio.currentTime = 0;
+        backgroundAudio.play().catch(() => {});
+    }
+}
+
+function pauseBackgroundAudio() {
+    if (!backgroundAudio.paused) {
+        backgroundAudio.pause();
+    }
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
     const seedNode = document.getElementById("demo-seed");
     const seed = seedNode ? JSON.parse(seedNode.textContent) : {
         calmQuestions: ["What's on your mind today?"],
@@ -8,7 +26,17 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const isSessionMode = document.body.dataset.sessionMode === "1";
-    const userId = seed.user?.id || seed.user?.email || "demo-user-123";
+    let userId = seed.user?.id || seed.user?.email || "demo-user-123";
+
+    if (isSessionMode) {
+        const currentUser = await getCurrentUser();
+        if (!currentUser) {
+            window.location.href = "/auth?mode=login&next=" + encodeURIComponent("/session");
+            return;
+        }
+        userId = currentUser.userId;
+    }
+
     const boardHref = document.body.dataset.boardHref || "/dashboard";
     const API_BASE = "/tasks";
 
@@ -60,10 +88,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const calmQuestions = Array.isArray(seed.calmQuestions) ? seed.calmQuestions : [];
     const urgentQuestions = Array.isArray(seed.urgentQuestions) ? seed.urgentQuestions : [];
     const demoVoiceResponses = seed.voiceSamples || { calm: "", urgent: "" };
-    const totalSteps = Number(seed.steps) > 0 ? Number(seed.steps) : 4;
+    const totalSteps = Number(seed.steps) > 0 ? Number(seed.steps) : 5;
+    const useDynamicQuestions = seed.useDynamicQuestions === true;
 
-    let questionIndex = 0;
-    let activeQuestionSet = calmQuestions;
+    const FALLBACK_QUESTIONS = {
+        calm: calmQuestions[0] || "What's on your mind today?",
+        urgent: urgentQuestions[0] || "What needs attention first?",
+    };
+    const GENERIC_FOLLOWUP = "What else is on your mind?";
     let selectedInputMode = "voice";
     let questionTypingTimer = null;
     let reviewTypingTimer = null;
@@ -76,6 +108,179 @@ document.addEventListener("DOMContentLoaded", () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition = null;
     let fullTranscript = "";
+    let combinedTranscript = "";
+    let lastStepTranscript = "";
+
+    const speechSynthesisApi = window.speechSynthesis || null;
+    let availableVoices = [];
+    let currentTtsAudio = null;
+    let currentTtsAudioUrl = "";
+    let currentTtsRequest = null;
+
+    function cacheVoices() {
+        if (!speechSynthesisApi) {
+            return;
+        }
+        availableVoices = speechSynthesisApi.getVoices() || [];
+    }
+
+    function pickQuestionVoice() {
+        if (!availableVoices.length) {
+            return null;
+        }
+
+        const preferredNames = [
+            "Natural",
+            "Neural",
+            "Ava",
+            "Jenny",
+            "Microsoft Aria",
+            "Google US English",
+            "Samantha",
+            "Karen",
+            "Zira",
+        ];
+
+        const preferred = availableVoices.find((voice) =>
+            preferredNames.some((name) => voice.name.includes(name)),
+        );
+        if (preferred) {
+            return preferred;
+        }
+
+        return (
+            availableVoices.find((voice) => voice.lang === "en-US") ||
+            availableVoices.find((voice) => voice.lang?.startsWith("en")) ||
+            null
+        );
+    }
+
+    function stopQuestionVoiceover() {
+        if (currentTtsRequest) {
+            currentTtsRequest.abort();
+            currentTtsRequest = null;
+        }
+
+        if (currentTtsAudio) {
+            currentTtsAudio.pause();
+            currentTtsAudio.currentTime = 0;
+            currentTtsAudio = null;
+        }
+
+        if (currentTtsAudioUrl) {
+            URL.revokeObjectURL(currentTtsAudioUrl);
+            currentTtsAudioUrl = "";
+        }
+
+        if (!speechSynthesisApi) {
+            return;
+        }
+        speechSynthesisApi.cancel();
+    }
+
+    async function speakQuestionWithServerTts(text) {
+        const mode = body.classList.contains("mode-urgent") ? "urgent" : "calm";
+        const controller = new AbortController();
+        currentTtsRequest = controller;
+
+        const res = await fetch("/speech/tts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text, mode }),
+            signal: controller.signal,
+        });
+
+        if (!res.ok) {
+            throw new Error("server tts unavailable");
+        }
+
+        const blob = await res.blob();
+        if (!blob.size) {
+            throw new Error("empty tts audio");
+        }
+
+        const objectUrl = URL.createObjectURL(blob);
+        currentTtsAudioUrl = objectUrl;
+        const audio = new Audio(objectUrl);
+        currentTtsAudio = audio;
+
+        audio.addEventListener("ended", () => {
+            if (currentTtsAudioUrl) {
+                URL.revokeObjectURL(currentTtsAudioUrl);
+                currentTtsAudioUrl = "";
+            }
+            currentTtsAudio = null;
+        });
+
+        await audio.play();
+    }
+
+    function speakQuestionWithBrowser(text) {
+        if (!speechSynthesisApi || !text || !text.trim()) {
+            return;
+        }
+
+        const utterance = new SpeechSynthesisUtterance(text.trim());
+        const voice = pickQuestionVoice();
+        if (voice) {
+            utterance.voice = voice;
+            utterance.lang = voice.lang;
+        } else {
+            utterance.lang = "en-US";
+        }
+        utterance.rate = 0.96;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+        speechSynthesisApi.speak(utterance);
+    }
+
+    async function speakQuestion(text) {
+        if (!text || !text.trim()) {
+            return;
+        }
+
+        stopQuestionVoiceover();
+
+        try {
+            await speakQuestionWithServerTts(text.trim());
+            return;
+        } catch (_) {
+            // Fallback to browser voice when backend TTS is unavailable or blocked.
+        }
+
+        speakQuestionWithBrowser(text.trim());
+    }
+
+    async function fetchNextQuestion() {
+        const isUrgent = body.classList.contains("mode-urgent");
+        const mode = isUrgent ? "urgent" : "calm";
+        if (!useDynamicQuestions) {
+            const fallback = isUrgent ? urgentQuestions : calmQuestions;
+            const idx = Math.min(currentStep - 1, fallback.length - 1);
+            return fallback[idx] || FALLBACK_QUESTIONS[mode];
+        }
+        try {
+            const res = await fetch("/speech/next-question", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    transcriptSoFar: combinedTranscript,
+                    stepNumber: currentStep,
+                    mode,
+                }),
+            });
+            const data = await res.json();
+            if (data.question && data.question.trim()) {
+                return data.question.trim();
+            }
+            throw new Error(data.error || "No question returned");
+        } catch (err) {
+            if (currentStep === 1) {
+                return FALLBACK_QUESTIONS[mode];
+            }
+            return GENERIC_FOLLOWUP;
+        }
+    }
 
     function updateStepUi() {
         stepLabel.textContent = `${currentStep} / ${totalSteps}`;
@@ -171,14 +376,24 @@ document.addEventListener("DOMContentLoaded", () => {
         fullTranscript = "";
     }
 
-    function setQuestion(index) {
-        questionIndex = index % Math.max(activeQuestionSet.length, 1);
+    function setQuestion(questionContent) {
+        playBackgroundAudio();
+        const nextQuestion = questionContent || FALLBACK_QUESTIONS.calm;
+
         changeQuestionBtn.classList.add("hidden");
         interactionStage.classList.add("is-loading");
-        typeIntoElement(questionText, activeQuestionSet[questionIndex], 34, () => {
-            interactionStage.classList.remove("is-loading");
-            changeQuestionBtn.classList.remove("hidden");
-        });
+        // Start typing animation only after audio is ready and starts playing
+        (async () => {
+            try {
+                await speakQuestion(nextQuestion);
+            } catch (e) {
+                // fallback: still show text if audio fails
+            }
+            typeIntoElement(questionText, nextQuestion, 34, () => {
+                interactionStage.classList.remove("is-loading");
+                changeQuestionBtn.classList.remove("hidden");
+            });
+        })();
         resetRecordingUi();
         voiceReview.classList.add("hidden");
         tapSpeakBtn.classList.remove("hidden");
@@ -188,17 +403,19 @@ document.addEventListener("DOMContentLoaded", () => {
         updateOrbState("speaking");
     }
 
-    function cycleQuestion() {
-        setQuestion((questionIndex + 1) % activeQuestionSet.length);
+    async function cycleQuestion() {
+        const question = await fetchNextQuestion();
+        setQuestion(question);
     }
 
-    function moveToNextQuestion() {
+    async function moveToNextQuestion() {
         if (currentStep < totalSteps) {
             currentStep += 1;
             updateStepUi();
-            cycleQuestion();
+            const question = await fetchNextQuestion();
+            setQuestion(question);
         } else {
-            showResults();
+            await showResults();
         }
     }
 
@@ -215,16 +432,23 @@ document.addEventListener("DOMContentLoaded", () => {
         { name: "Deep work block: draft first full section",  dur: "~25 min", cat: "Work",   prio: "LOW" },
     ];
 
+    const CATEGORIES = ["Work", "Health", "Relationships", "Finance", "Personal Growth", "Spirituality", "Family"];
+    const DURATIONS = ["5 min", "15 min", "20 min", "30 min", "45 min", "1 hr"];
+    const PRIORITIES = ["LOW", "MED", "HIGH"];
+
     const CAT_STYLE = {
-        Work:         "background:#f2eced;color:#7f5b63",
-        Health:       "background:#f0f7e8;color:#5a8a3a",
-        Finance:      "background:#fef7e6;color:#9a7a20",
-        Relationships:"background:#f0f0fa;color:#6060b0",
+        Work: "background:#f2eced;color:#7f5b63",
+        Health: "background:#f0f7e8;color:#5a8a3a",
+        Finance: "background:#fef7e6;color:#9a7a20",
+        Relationships: "background:#f0f0fa;color:#6060b0",
+        "Personal Growth": "background:#edf2fd;color:#5d77ad",
+        Spirituality: "background:#fff4e9;color:#b27838",
+        Family: "background:#e9f6ee;color:#4a8f6e",
     };
 
     const PRIO_STYLE = {
-        LOW:  "background:#f0f2f5;color:#8799b4",
-        MED:  "background:#fdf6e8;color:#a08030",
+        LOW: "background:#f0f2f5;color:#8799b4",
+        MED: "background:#fdf6e8;color:#a08030",
         HIGH: "background:#fdf0ee;color:#c8604a",
     };
 
@@ -236,14 +460,193 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    function showResults() {
+    function renderTaskList(tasks, taskEl, emptyTranscript) {
+        if (!taskEl) return;
+        if (emptyTranscript && tasks.length === 0) {
+            taskEl.innerHTML =
+                `<li class="py-6 text-center" style="color:#8da0be;font-size:14px;line-height:1.5">` +
+                `Not enough information — we couldn't extract any tasks from your session. ` +
+                `Please try again with more detailed responses.</li>`;
+            return;
+        }
+        taskEl.innerHTML = tasks.map((t, i) => {
+            const cat = CAT_STYLE[t.cat] || CAT_STYLE.Work;
+            const prio = PRIO_STYLE[t.prio] || PRIO_STYLE.LOW;
+            const sep = i > 0 ? "border-top:1px solid #f0f2f5;" : "";
+            return (
+                `<li data-task-idx="${i}" style="${sep}display:flex;align-items:flex-start;gap:8px;padding:12px 0">` +
+                `<span style="margin-top:6px;height:6px;width:6px;flex:none;border-radius:9999px;background:#334772"></span>` +
+                `<span class="task-name" style="flex:1;font-size:14px;font-weight:500;line-height:1.45;color:#2f426c">${escapeHtml(t.name)}</span>` +
+                `<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;padding-top:2px;flex:none">` +
+                `<div style="display:flex;align-items:center;gap:5px">` +
+                `<span style="white-space:nowrap;font-size:10px;color:#8da0be">${escapeHtml(t.dur)}</span>` +
+                `<span style="border-radius:9999px;padding:2px 8px;font-size:10px;font-weight:600;${cat}">${escapeHtml(t.cat)}</span>` +
+                `<span style="border-radius:9999px;padding:2px 8px;font-size:10px;font-weight:700;${prio}">${escapeHtml(t.prio)}</span>` +
+                `<button type="button" class="task-date-btn" data-idx="${i}" title="Add due date" style="cursor:pointer;background:none;border:none;padding:0;font-size:13px;line-height:1">📅</button>` +
+                `<button type="button" class="task-edit-btn" data-idx="${i}" title="Edit task" style="cursor:pointer;background:none;border:none;padding:0;font-size:13px;line-height:1">✏️</button>` +
+                `<button type="button" class="task-del-btn" data-idx="${i}" title="Delete task" style="cursor:pointer;background:none;border:none;padding:0;font-size:13px;line-height:1">🗑️</button>` +
+                `</div>` +
+                `<input type="date" id="dt-${i}" style="display:none;font-size:11px;border-radius:8px;border:1px solid #dfebe7;background:#fff;padding:3px 8px;max-width:130px">` +
+                `</div></li>`
+            );
+        }).join("");
+
+        taskEl.querySelectorAll(".task-date-btn").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const i = parseInt(btn.getAttribute("data-idx"), 10);
+                window.toggleDate(i);
+            });
+        });
+        taskEl.querySelectorAll(".task-edit-btn").forEach((btn) => {
+            btn.addEventListener("click", () => showTaskEditForm(parseInt(btn.getAttribute("data-idx"), 10)));
+        });
+        taskEl.querySelectorAll(".task-del-btn").forEach((btn) => {
+            btn.addEventListener("click", () => removeTask(parseInt(btn.getAttribute("data-idx"), 10)));
+        });
+    }
+
+    function escapeHtml(s) {
+        const div = document.createElement("div");
+        div.textContent = s;
+        return div.innerHTML;
+    }
+
+    function showTaskEditForm(idx) {
+        const taskEl = document.getElementById("task-list");
+        const tasks = resultTasksForSave;
+        if (idx < 0 || idx >= tasks.length || !taskEl) return;
+        const t = tasks[idx];
+        const li = taskEl.querySelector(`li[data-task-idx="${idx}"]`);
+        if (!li) return;
+
+        const catOpts = CATEGORIES.map((c) => `<option value="${escapeHtml(c)}" ${c === t.cat ? "selected" : ""}>${escapeHtml(c)}</option>`).join("");
+        const durOpts = DURATIONS.map((d) => {
+            const display = `~${d}`;
+            const match = t.dur && (t.dur === display || t.dur === d);
+            return `<option value="${escapeHtml(d)}" ${match ? "selected" : ""}>${escapeHtml(display)}</option>`;
+        }).join("");
+        const prioOpts = PRIORITIES.map((p) => `<option value="${p}" ${p === t.prio ? "selected" : ""}>${p}</option>`).join("");
+
+        li.innerHTML = (
+            `<div style="display:flex;flex-direction:column;gap:8px;width:100%">` +
+            `<input type="text" class="task-edit-name" value="${escapeHtml(t.name)}" placeholder="Task name" style="font-size:14px;padding:8px 12px;border-radius:10px;border:1px solid #e2e8f0;width:100%">` +
+            `<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">` +
+            `<select class="task-edit-cat" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid #e2e8f0">${catOpts}</select>` +
+            `<select class="task-edit-dur" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid #e2e8f0">${durOpts}</select>` +
+            `<select class="task-edit-prio" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid #e2e8f0">${prioOpts}</select>` +
+            `</div>` +
+            `<div style="display:flex;gap:6px">` +
+            `<button type="button" class="task-save-edit" data-idx="${idx}" style="padding:6px 14px;font-size:12px;font-weight:600;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer">Done</button>` +
+            `<button type="button" class="task-cancel-edit" data-idx="${idx}" style="padding:6px 14px;font-size:12px;font-weight:600;border-radius:8px;border:1px solid #e2e8f0;background:#fff;color:#6b7a94;cursor:pointer">Cancel</button>` +
+            `</div></div>`
+        );
+
+        const saveBtn = li.querySelector(".task-save-edit");
+        const cancelBtn = li.querySelector(".task-cancel-edit");
+        saveBtn.addEventListener("click", () => {
+            const name = li.querySelector(".task-edit-name").value.trim();
+            const cat = li.querySelector(".task-edit-cat").value;
+            const dur = li.querySelector(".task-edit-dur").value;
+            const prio = li.querySelector(".task-edit-prio").value;
+            if (name) {
+                resultTasksForSave[idx] = { name, dur: dur.startsWith("~") ? dur : `~${dur}`, cat, prio };
+                renderTaskList(resultTasksForSave, taskEl, false);
+                updateTaskCountLabel();
+            }
+        });
+        cancelBtn.addEventListener("click", () => {
+            renderTaskList(resultTasksForSave, taskEl, false);
+        });
+    }
+
+    function removeTask(idx) {
+        resultTasksForSave.splice(idx, 1);
+        const taskEl = document.getElementById("task-list");
+        renderTaskList(resultTasksForSave, taskEl, false);
+        updateTaskCountLabel();
+    }
+
+    function addNewTask() {
+        resultTasksForSave.push({ name: "New task", dur: "~15 min", cat: "Work", prio: "MED" });
+        const taskEl = document.getElementById("task-list");
+        renderTaskList(resultTasksForSave, taskEl, false);
+        updateTaskCountLabel();
+        showTaskEditForm(resultTasksForSave.length - 1);
+    }
+
+    function updateTaskCountLabel() {
+        const el = document.getElementById("task-count-label");
+        if (el) {
+            const n = resultTasksForSave.length;
+            el.textContent = n === 0 ? "No tasks" : `${n} Task${n === 1 ? "" : "s"} queued`;
+        }
+    }
+
+    function importanceToPrio(importance) {
+        const i = Number(importance);
+        if (i >= 7) return "HIGH";
+        if (i >= 4) return "MED";
+        return "LOW";
+    }
+
+    function mapExtractedTaskToDisplay(extracted) {
+        const importance = extracted.importance ?? 5;
+        const mins = extracted.estimatedTimeToComplete;
+        const dur = mins != null ? `~${mins} min` : "~15 min";
+        return {
+            name: extracted.title || "Task",
+            dur,
+            cat: extracted.category || "Work",
+            prio: importanceToPrio(importance),
+        };
+    }
+
+    async function showResults() {
+        const resultsScreen = document.getElementById("results-screen");
+        const loadingEl = document.getElementById("results-loading");
+        const contentEl = document.getElementById("results-content");
+
+        if (loadingEl) loadingEl.classList.remove("hidden");
+        if (contentEl) contentEl.classList.add("hidden");
+        resultsScreen.classList.remove("hidden");
+        window.scrollTo(0, 0);
+
+        let resultTasks = [];
+        const transcript = combinedTranscript.trim();
         const isUrgent = body.classList.contains("mode-urgent");
-        const resultTasks = isUrgent
-            ? DEMO_TASKS.map((task) => ({ ...task, prio: "HIGH" }))
-            : DEMO_TASKS;
+
+        if (transcript) {
+            try {
+                const res = await fetch("/speech/analyze", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: transcript, userId }),
+                });
+                const payload = await res.json();
+                const extracted = payload.extractedTasks || [];
+                if (extracted.length > 0) {
+                    resultTasks = extracted.map(mapExtractedTaskToDisplay);
+                    if (isUrgent) {
+                        resultTasks = resultTasks.map((t) => ({ ...t, prio: "HIGH" }));
+                    }
+                }
+            } catch (_) {
+                /* fall through to fallback */
+            }
+        }
+
+        const emptyTranscript = !transcript;
+        if (resultTasks.length === 0 && !emptyTranscript) {
+            resultTasks = isUrgent
+                ? DEMO_TASKS.map((t) => ({ ...t, prio: "HIGH" }))
+                : DEMO_TASKS;
+        }
+
         resultTasksForSave = resultTasks;
 
-        // Populate theme chips
+        if (loadingEl) loadingEl.classList.add("hidden");
+        if (contentEl) contentEl.classList.remove("hidden");
+
         const themeEl = document.getElementById("theme-chips");
         if (themeEl) {
             themeEl.innerHTML = DEMO_THEMES.map((t) =>
@@ -253,43 +656,31 @@ document.addEventListener("DOMContentLoaded", () => {
             ).join("");
         }
 
-        // Populate task list
-        const taskEl = document.getElementById("task-list");
-        if (taskEl) {
-            taskEl.innerHTML = resultTasks.map((t, i) => {
-                const cat  = CAT_STYLE[t.cat]  || CAT_STYLE.Work;
-                const prio = PRIO_STYLE[t.prio] || PRIO_STYLE.LOW;
-                const sep  = i > 0 ? "border-top:1px solid #f0f2f5;" : "";
-                return (
-                    `<li style="${sep}display:flex;align-items:flex-start;gap:8px;padding:12px 0">` +
-                    `<span style="margin-top:6px;height:6px;width:6px;flex:none;border-radius:9999px;background:#334772"></span>` +
-                    `<span style="flex:1;font-size:14px;font-weight:500;line-height:1.45;color:#2f426c">${t.name}</span>` +
-                    `<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;padding-top:2px;flex:none">` +
-                    `<div style="display:flex;align-items:center;gap:5px">` +
-                    `<span style="white-space:nowrap;font-size:10px;color:#8da0be">${t.dur}</span>` +
-                    `<span style="border-radius:9999px;padding:2px 8px;font-size:10px;font-weight:600;${cat}">${t.cat}</span>` +
-                    `<span style="border-radius:9999px;padding:2px 8px;font-size:10px;font-weight:700;${prio}">${t.prio}</span>` +
-                    `<button style="font-size:13px;cursor:pointer;background:none;border:none;padding:0;line-height:1" onclick="toggleDate(${i})" title="Add due date">📅</button>` +
-                    `</div>` +
-                    `<input type="date" id="dt-${i}" style="display:none;font-size:11px;border-radius:8px;border:1px solid #dfebe7;background:#fff;padding:3px 8px;max-width:130px">` +
-                    `</div></li>`
-                );
-            }).join("");
+        const taskCountEl = document.getElementById("task-count-label");
+        if (taskCountEl) {
+            taskCountEl.textContent =
+                resultTasks.length === 0
+                    ? "No tasks"
+                    : `${resultTasks.length} Task${resultTasks.length === 1 ? "" : "s"} queued`;
         }
 
-        document.getElementById("results-screen").classList.remove("hidden");
+        const taskEl = document.getElementById("task-list");
+        renderTaskList(resultTasksForSave, taskEl, emptyTranscript);
+
         window.scrollTo(0, 0);
     }
 
-    function applyTone(mode) {
+    async function applyTone(mode) {
         const isUrgent = mode === "urgent";
         body.classList.toggle("mode-urgent", isUrgent);
         modeIcon.textContent = isUrgent ? "\u26A1" : "\uD83C\uDF43";
         modeText.textContent = isUrgent ? "Urgent" : "Calm";
-        activeQuestionSet = isUrgent ? urgentQuestions : calmQuestions;
         currentStep = 1;
+        combinedTranscript = "";
+        lastStepTranscript = "";
         updateStepUi();
-        setQuestion(0);
+        const question = await fetchNextQuestion();
+        setQuestion(question);
     }
 
     function setInputMode(mode) {
@@ -324,12 +715,17 @@ document.addEventListener("DOMContentLoaded", () => {
         liveTranscriptWrap.classList.add("hidden");
         voiceReview.classList.remove("hidden");
         tapSpeakBtn.classList.add("hidden");
-        const responseText = fullTranscript.trim() || "No speech detected.";
+        // Use displayed text (fullTranscript + any interim) so we capture what user saw when stopping quickly
+        const displayedText = (liveTranscript && liveTranscript.textContent || "").trim();
+        const captured = displayedText || fullTranscript.trim();
+        const responseText = captured || "No speech detected.";
+        lastStepTranscript = captured;
         typeIntoTextarea(voiceOutput, responseText, 14, () => updateOrbState("ready"));
         resetRecordingUi();
     }
 
     function startRecording() {
+        stopQuestionVoiceover();
         resetRecordingUi();
         voiceReview.classList.add("hidden");
         tapSpeakBtn.classList.add("hidden");
@@ -439,6 +835,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     voiceConfirmBtn.addEventListener("click", () => {
+        const stepText = (lastStepTranscript || voiceOutput.value.trim() || "").trim();
+        if (stepText) {
+            combinedTranscript += (combinedTranscript ? "\n\n" : "") + stepText;
+        }
+        lastStepTranscript = "";
         demoNote.textContent = "Saved for demo. Moving to next question...";
         setTimeout(moveToNextQuestion, 520);
     });
@@ -448,18 +849,36 @@ document.addEventListener("DOMContentLoaded", () => {
             typedInput.focus();
             return;
         }
+        const stepText = typedInput.value.trim();
+        combinedTranscript += (combinedTranscript ? "\n\n" : "") + stepText;
         demoNote.textContent = "Submitted for demo. Moving to next question...";
         setTimeout(moveToNextQuestion, 520);
     });
 
-    applyTone("calm");
+    await applyTone("calm");
     setInputMode("voice");
     updateStepUi();
+
+    if (speechSynthesisApi) {
+        cacheVoices();
+        speechSynthesisApi.onvoiceschanged = cacheVoices;
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) {
+                stopQuestionVoiceover();
+            }
+        });
+        window.addEventListener("beforeunload", stopQuestionVoiceover);
+    }
 
     const openTeamBtn = document.getElementById("open-team");
     const teamDialog = document.getElementById("team-dialog");
     if (openTeamBtn && teamDialog) {
         openTeamBtn.addEventListener("click", () => teamDialog.showModal());
+    }
+
+    const addTaskBtn = document.getElementById("add-task-btn");
+    if (addTaskBtn) {
+        addTaskBtn.addEventListener("click", addNewTask);
     }
 
     const saveToBoardBtn = document.getElementById("save-to-board-btn");
