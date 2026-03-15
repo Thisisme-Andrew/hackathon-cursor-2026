@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Orion Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}" />
+</head>
+
+<body class="min-h-screen bg-[#f4f7fb] text-[#2f426c]" style="font-family:'Poppins',sans-serif">
+
+    <header class="sticky top-0 z-20 border-b border-slate-200/80 bg-white/80 backdrop-blur">
+        <div class="mx-auto flex max-w-3xl items-center justify-between gap-3 px-5 py-3">
+            <a href="{{ url_for('home') }}" class="flex items-center gap-2 no-underline">
+                <span class="h-2 w-2 rounded-full bg-[#7ccfa9]"
+                    style="box-shadow:0 0 0 3px rgba(124,207,169,.18)"></span>
+                <span class="text-xl font-extrabold tracking-[0.24em] text-[#334772]">ORION</span>
+            </a>
+            <div class="relative flex items-center gap-2">
+                <a href="{{ url_for('session_page') }}"
+                    class="btn-soft-hover btn btn-sm rounded-full border-0 bg-[#7ccfa9] px-4 text-sm font-bold text-white normal-case"
+                    style="box-shadow:0 5px 12px rgba(124,207,169,.28)">&#10022; Session</a>
+                <button id="open-add" type="button"
+                    class="btn-soft-hover btn btn-sm btn-circle border-0 bg-slate-100 text-xl font-light text-[#334772]"
+                    title="Quick add task">+</button>
+                <div class="relative">
+                    <button id="user-menu-btn" type="button"
+                        class="btn-soft-hover btn btn-sm rounded-full border-0 bg-[#4d6892] px-3 text-sm font-bold text-white normal-case">
+                        <span id="user-avatar"
+                            class="mr-1 inline-grid h-6 w-6 place-items-center rounded-full bg-[#6d84ac] text-[10px] font-bold">SA</span>
+                        <span id="user-name-top" class="max-w-[80px] truncate">sagesse</span>
+                    </button>
+                    <div id="user-dropdown"
+                        class="hide absolute right-0 top-11 z-40 w-48 rounded-2xl border border-slate-100 bg-white p-2 shadow-xl">
+                        <div class="mb-1 px-2 pb-2 pt-1">
+                            <p id="user-name-menu" class="text-sm font-bold text-[#334772]"></p>
+                            <p id="user-email-menu" class="text-xs text-slate-400"></p>
+                        </div>
+                        <div class="border-t border-slate-100"></div>
+                        <button id="open-priority-settings" type="button"
+                            class="menu-item-hover mt-1 block w-full rounded-xl px-2 py-1.5 text-left text-sm font-semibold text-[#334772]">
+                            &#9881; Priority Settings
+                        </button>
+                        <a href="{{ url_for('home') }}"
+                            class="menu-item-hover mt-0.5 block rounded-xl px-2 py-1.5 text-sm font-semibold text-red-400">
+                            Sign out
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="mx-auto max-w-3xl px-5 pb-8">
+
+        <section class="pt-6">
+            <h1 class="text-2xl font-extrabold leading-tight text-[#2f4a77] sm:text-3xl">
+                <span id="hero-greeting">Good evening</span>, <span id="hero-name">sagesse</span>. &#x1F44B;
+            </h1>
+            <div class="mt-1 flex items-center justify-between gap-2">
+                <p id="quote-text" class="text-sm font-medium italic text-slate-400">&ldquo;Progress, not
+                    perfection.&rdquo;</p>
+                <button id="refresh-quote" type="button"
+                    class="border-0 bg-transparent text-sm text-slate-300 hover:text-slate-500 cursor-pointer"
+                    aria-label="Refresh quote">&#8635;</button>
+            </div>
+        </section>
+
+        <div id="add-task-card" class="hide mt-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p class="mb-2.5 text-xs font-bold uppercase tracking-widest text-slate-400">&#9998; Quick Add</p>
+            <input id="new-title" type="text" placeholder="Write your task here..."
+                class="input input-bordered w-full rounded-xl border-slate-200 bg-slate-50 text-[15px] text-[#2f426c] focus:outline-none" />
+            <div class="mt-3 grid grid-cols-2 gap-2.5">
+                <select id="new-duration"
+                    class="select select-bordered select-sm w-full rounded-xl border-slate-200 bg-slate-50 text-[15px] text-[#334772]">
+                    <option>5 min</option>
+                    <option selected>15 min</option>
+                    <option>20 min</option>
+                    <option>30 min</option>
+                    <option>45 min</option>
+                    <option>1 hr</option>
+                </select>
+                <select id="new-category"
+                    class="select select-bordered select-sm w-full rounded-xl border-slate-200 bg-slate-50 text-[15px] text-[#334772]">
+                    <option value="Work">💼 Work</option>
+                    <option value="Health">🌿 Health</option>
+                    <option value="Relationships">💬 Relationships</option>
+                    <option value="Finance">💰 Finance</option>
+                    <option value="Personal Growth">📈 Personal Growth</option>
+                    <option value="Spirituality">✨ Spirituality</option>
+                    <option value="Family">🏠 Family</option>
+                </select>
+            </div>
+            <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
+                <div class="flex gap-2">
+                    <button type="button" data-prio-pick="LOW"
+                        class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-400 cursor-pointer hover:bg-slate-100">
+                        LOW
+                    </button>
+                    <button type="button" data-prio-pick="MED"
+                        class="rounded-full border border-[#f2d6a8] bg-[#fff8ee] px-3 py-1.5 text-xs font-bold text-[#c38f37] cursor-pointer">
+                        MED
+                    </button>
+                    <button type="button" data-prio-pick="HIGH"
+                        class="rounded-full border border-[#efcfc8] bg-[#fff3f0] px-3 py-1.5 text-xs font-bold text-[#cf5a3f] cursor-pointer">
+                        HIGH
+                    </button>
+                </div>
+                <input id="new-due" type="date" style="color-scheme:light"
+                    class="input input-bordered input-xs rounded-xl border-slate-200 bg-white text-xs text-[#334772]" />
+            </div>
+            <div class="mt-3 flex items-center gap-2">
+                <button id="add-task-btn" type="button"
+                    class="btn-soft-hover btn btn-sm flex-1 rounded-full border-0 bg-[#7ccfa9] text-sm font-bold text-white normal-case"
+                    style="box-shadow:0 6px 14px rgba(124,207,169,.28)">Add Task</button>
+                <button id="close-add" type="button"
+                    class="btn-soft-hover btn btn-sm btn-circle border-0 bg-slate-100 text-xs text-slate-400">&#10005;</button>
+            </div>
+        </div>
+
+        <div class="mt-6 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+            <div class="flex items-center justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <div id="progress-ring" class="ring flex-none">
+                        <span id="progress-percent" class="text-sm font-bold text-[#334772]">0%</span>
+                    </div>
+                    <div>
+                        <p id="progress-title" class="text-xl font-bold text-[#2f426c]">0 of 0 tasks done</p>
+                        <p id="progress-subtitle" class="text-base text-slate-400">0 remaining</p>
+                    </div>
+                </div>
+                <button id="clear-done" type="button"
+                    class="btn-soft-hover hide btn btn-sm rounded-full border border-red-200 bg-red-50 text-xs font-bold normal-case text-red-400">
+                    &#128465; Clear done
+                </button>
+            </div>
+        </div>
+
+        <button id="focus-enter" type="button"
+            class="btn-soft-hover btn btn-sm mt-4 rounded-full border-0 bg-slate-100 px-5 text-sm font-bold normal-case text-[#334772]">
+            &#9678; Enter Focus Mode
+        </button>
+
+        <div id="empty-card" class="hide mt-4 rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
+            <p class="text-2xl">&#10024;</p>
+            <p class="mt-1 text-base font-semibold text-slate-400">Your board is clear.</p>
+            <p class="text-sm text-slate-400">Start a session or quick-add a task.</p>
+            <a href="{{ url_for('session_page') }}"
+                class="btn btn-sm mt-3 rounded-full border-0 bg-[#7ccfa9] text-sm font-bold text-white normal-case">
+                New Session
+            </a>
+        </div>
+
+        <section class="mt-6">
+            <h2 class="mb-2.5 flex items-center gap-2 text-lg font-extrabold tracking-wide text-[#2f4a77]">
+                TO DO
+                <span id="todo-count"
+                    class="badge badge-sm border-0 bg-slate-100 text-xs font-bold text-slate-400">0</span>
+            </h2>
+            <div id="todo-list" class="flex flex-col gap-2.5"></div>
+            <button id="show-more-btn" type="button"
+                class="hide btn btn-sm btn-ghost mt-2 w-full rounded-xl border border-dashed border-slate-200 text-sm font-semibold normal-case text-slate-400">
+                Show more tasks
+            </button>
+        </section>
+
+        <section id="done-wrap" class="hide mt-5">
+            <button id="done-toggle" type="button"
+                class="flex cursor-pointer items-center gap-1.5 border-0 bg-transparent text-base font-bold text-slate-400 hover:text-slate-500">
+                <span id="done-chevron" class="text-[10px]">&#9654;</span>
+                <span id="done-title">DONE (0)</span>
+            </button>
+            <div id="done-content" class="hide mt-2">
+                <div id="done-list" class="flex flex-col gap-2"></div>
+            </div>
+        </section>
+
+        <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p class="mb-2.5 text-sm font-bold text-slate-400">&#128231; Email task summary</p>
+            <div class="flex gap-2">
+                <input id="email-summary" type="email" placeholder="you@email.com"
+                    class="input input-bordered input-sm flex-1 rounded-full border-slate-200 bg-white text-[15px] text-[#334772]" />
+                <button id="send-email" type="button"
+                    class="btn-soft-hover btn btn-sm rounded-full border-0 bg-[#4d6892] px-6 text-sm font-bold text-white normal-case">
+                    Send
+                </button>
+            </div>
+        </div>
+
+        <div class="mt-14">
+            {% include 'partials/footer.html' %}
+        </div>
+    </main>
+
+    <div id="focus-overlay" class="focus-overlay">
+        <div class="absolute left-0 right-0 top-0 flex items-center justify-between px-5 pt-4">
+            <button id="focus-exit" type="button"
+                class="cursor-pointer border-0 bg-transparent text-base font-semibold text-slate-400 hover:text-slate-600">
+                &larr; Exit Focus
+            </button>
+            <p id="focus-counter" class="text-base font-semibold text-slate-400">1 of 1</p>
+        </div>
+        <div class="flex w-full flex-col items-center gap-3 px-4">
+            <div id="focus-dots" class="focus-dots"></div>
+            <div id="focus-card" class="w-[min(540px,94%)] rounded-2xl border border-slate-200 bg-white p-6 shadow-xl"
+                style="border-top:4px solid #c9d5e3">
+                <div class="flex items-center justify-between gap-2">
+                    <span id="focus-prio" class="focus-prio low badge border text-[11px] font-bold">&#9679; LOW</span>
+                    <span id="focus-dur" class="text-xs font-semibold text-slate-400">~5 min</span>
+                </div>
+                <h3 id="focus-title" class="my-4 text-2xl font-extrabold leading-tight text-[#1a2a44]">Task title</h3>
+                <button id="focus-done" type="button"
+                    class="btn-soft-hover btn w-full rounded-full border-0 text-sm font-bold text-white normal-case">
+                    &#10003; Mark as Done
+                </button>
+                <button id="focus-next" type="button"
+                    class="btn-soft-hover btn mt-2 w-full rounded-full border-0 bg-slate-100 text-sm font-bold normal-case text-slate-400">
+                    Next Task &rarr;
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <dialog id="priority-modal" class="modal">
+        <div class="modal-box w-11/12 max-w-sm rounded-3xl border-0 bg-[#f8f9fb] p-0 shadow-2xl">
+            <div class="p-6">
+                <div class="mb-5 flex items-start justify-between">
+                    <div>
+                        <h3 class="text-lg font-bold text-[#334772]">&#9878; Priority Weights</h3>
+                        <p class="mt-0.5 text-xs font-semibold text-slate-400">
+                            Affects scoring &middot; 1 = lowest, 5 = highest
+                        </p>
+                    </div>
+                    <form method="dialog">
+                        <button class="btn btn-circle btn-ghost btn-sm text-slate-400">&#10005;</button>
+                    </form>
+                </div>
+                <div id="weight-list" class="flex flex-col gap-3"></div>
+                <button id="save-weights" type="button"
+                    class="btn-soft-hover btn mt-5 w-full rounded-full border-0 bg-[#7ccfa9] text-sm font-bold text-white normal-case"
+                    style="box-shadow:0 10px 20px rgba(124,207,169,.28)">
+                    Save Changes
+                </button>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    </dialog>
+
+    {% include 'partials/team-dialog.html' %}
+
+    <script id="dashboard-seed" type="application/json">{{ dashboard_seed | tojson }}</script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}" defer></script>
+</body>
+
+</html>

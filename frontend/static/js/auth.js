@@ -12,6 +12,22 @@ document.addEventListener("DOMContentLoaded", () => {
     const viewSignup2 = document.getElementById("view-signup-step2");
 
     const authMessage = document.getElementById("auth-message");
+    const nextUrl = root.dataset.nextUrl || "/dashboard";
+
+    function bindPasswordToggle(inputId, buttonId) {
+        const input = document.getElementById(inputId);
+        const button = document.getElementById(buttonId);
+
+        if (!input || !button) {
+            return;
+        }
+
+        button.addEventListener("click", () => {
+            const showing = input.type === "text";
+            input.type = showing ? "password" : "text";
+            button.setAttribute("aria-pressed", String(!showing));
+        });
+    }
 
     const priorities = [
         "Work",
@@ -44,13 +60,13 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const priorityIconColors = {
-        Work: "#7f5b63",
-        Health: "#97c05d",
+        Work: "#a67a84",
+        Health: "#a7cf72",
         Relationships: "#9b9bd9",
         Finance: "#d1a54e",
         "Personal Growth": "#8ca0d6",
         Spirituality: "#d8a656",
-        Family: "#6fb596",
+        Family: "#7ecda8",
     };
 
     function setTabState(button, active) {
@@ -87,11 +103,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function setMessage(text, isSuccess) {
         authMessage.textContent = text;
-        authMessage.classList.remove("hidden", "bg-emerald-50", "text-emerald-700", "bg-red-50", "text-red-700");
+        authMessage.classList.remove("hidden", "auth-msg-success", "auth-msg-error");
         if (isSuccess) {
-            authMessage.classList.add("bg-emerald-50", "text-emerald-700");
+            authMessage.classList.add("auth-msg-success");
         } else {
-            authMessage.classList.add("bg-red-50", "text-red-700");
+            authMessage.classList.add("auth-msg-error");
         }
     }
 
@@ -250,5 +266,11 @@ document.addEventListener("DOMContentLoaded", () => {
         showLogin();
     } else {
         showSignupStep1();
+    }
+
+    const openTeamBtn = document.getElementById("open-team");
+    const teamDialog = document.getElementById("team-dialog");
+    if (openTeamBtn && teamDialog) {
+        openTeamBtn.addEventListener("click", () => teamDialog.showModal());
     }
 });
