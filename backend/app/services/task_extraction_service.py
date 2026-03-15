@@ -33,7 +33,9 @@ Extract one or more tasks from the transcript. For each task provide:
 - nextAction (object): {{ "text": "smallest concrete next step", "estimateMins": number }}
 - dueAt (ISO date-time string or null)
 
-Estimate urgency, effort, importance when the user does not state them. Infer category from the task content (e.g. banking/financial -> Finance). Return ONLY a valid JSON array of task objects, no explanation.
+Estimate urgency, effort, importance when the user does not state them. Infer category from the task content (e.g. banking/financial -> Finance).
+IMPORTANT: When estimating importance, do NOT factor in estimatedTimeToComplete. A quick 5-minute task can be very important; a 2-hour task can be low importance. Importance should reflect how critical the task is to the user's goals, not how long it takes.
+Return ONLY a valid JSON array of task objects, no explanation.
 Example: [{{"title": "Open trading account at bank", "description": "User wants to open an account at a bank branch.", "category": "Finance", "urgency": 5, "effort": 4, "importance": 7, "estimatedTimeToComplete": 60, "isOpenLoop": false, "nextAction": {{"text": "Find branch", "estimateMins": 5}}, "dueAt": null}}]"""
 
 TASK_RESOLUTION_SYSTEM_PROMPT = """You are a task-matching assistant. The user said something that was interpreted as a task with a title and optional description.
@@ -256,6 +258,20 @@ def extract_tasks_from_transcript(text: str, userId: str) -> dict:
                 delta = (w - 2.5) * 0.8
                 importance = task["importance"] + delta
                 task["importance"] = max(1, min(10, round(importance)))
+
+        # Reduce influence of duration on importance (half the weight of urgency/category).
+        # Longer tasks should not automatically score higher; dampen any duration bias.
+        for task in tasks:
+            mins = task.get("estimatedTimeToComplete")
+            if mins is not None and mins > 15:
+                try:
+                    m = int(mins)
+                    # Duration factor: 0 at 15min, up to 1.0 at 75+ min (half of category delta scale)
+                    excess = min(60, max(0, m - 15))
+                    duration_dampen = (excess / 60) * 1.0
+                    task["importance"] = max(1, min(10, round(task["importance"] - duration_dampen)))
+                except (TypeError, ValueError):
+                    pass
 
         # Match to existing user tasks: fetch and resolve
         existing_result = get_all_tasks(userId)

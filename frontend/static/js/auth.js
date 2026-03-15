@@ -40,13 +40,13 @@ document.addEventListener("DOMContentLoaded", () => {
     ];
 
     const priorityState = {
-        Work: 3,
-        Health: 3,
-        Relationships: 3,
-        Finance: 3,
-        "Personal Growth": 2,
-        Spirituality: 2,
-        Family: 3,
+        Work: null,
+        Health: null,
+        Relationships: null,
+        Finance: null,
+        "Personal Growth": null,
+        Spirituality: null,
+        Family: null,
     };
 
     const priorityIcons = {
@@ -116,6 +116,21 @@ document.addEventListener("DOMContentLoaded", () => {
         authMessage.classList.add("hidden");
     }
 
+    function allPrioritiesSelected() {
+        return priorities.every((area) => {
+            const v = priorityState[area];
+            return v != null && v >= 1 && v <= 5;
+        });
+    }
+
+    function updateCreateButtonState() {
+        const btn = document.getElementById("signup-create");
+        if (!btn) return;
+        const complete = allPrioritiesSelected();
+        btn.disabled = !complete;
+        btn.setAttribute("aria-disabled", String(!complete));
+    }
+
     function renderPriorities() {
         const container = document.getElementById("priority-list");
         container.innerHTML = "";
@@ -150,6 +165,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 btn.addEventListener("click", () => {
                     priorityState[area] = i;
                     renderPriorities();
+                    updateCreateButtonState();
                 });
                 group.appendChild(btn);
             }
@@ -158,21 +174,10 @@ document.addEventListener("DOMContentLoaded", () => {
             row.appendChild(group);
             container.appendChild(row);
         });
+        updateCreateButtonState();
     }
 
-    /**
-     * Hash password with SHA-256 before sending to backend.
-     * Returns hex-encoded hash string.
-     */
-    async function hashPassword(plainPassword) {
-        const encoder = new TextEncoder();
-        const data = encoder.encode(plainPassword);
-        const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-    }
-
-    const API_BASE = "/users";
+    const AUTH_BASE = "/auth";
 
     tabLogin.addEventListener("click", showLogin);
     tabSignup.addEventListener("click", showSignupStep1);
@@ -188,16 +193,21 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            const passwordHash = await hashPassword(password);
-            const res = await fetch(`${API_BASE}/login`, {
+            const res = await fetch(`${AUTH_BASE}/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password: passwordHash }),
+                body: JSON.stringify({ email, password }),
             });
             const data = await res.json();
 
             if (res.ok) {
-                setMessage(`Welcome back, ${data.firstName || "User"}!`, true);
+                setMessage(`Welcome back, ${data.user?.firstName || "User"}!`, true);
+                if (data.access_token) {
+                    localStorage.setItem("orion_token", data.access_token);
+                    setTimeout(() => {
+                        window.location.href = nextUrl;
+                    }, 500);
+                }
             } else {
                 setMessage(data.error || "Login failed.", false);
             }
@@ -223,10 +233,12 @@ document.addEventListener("DOMContentLoaded", () => {
             setMessage("Password must be at least 6 characters.", false);
             return;
         }
+        if (!allPrioritiesSelected()) {
+            setMessage("Please select a priority (1–5) for each category above.", false);
+            return;
+        }
 
         try {
-            const passwordHash = await hashPassword(password);
-
             const categoryWeights = {
                 work: priorityState.Work,
                 health: priorityState.Health,
@@ -237,12 +249,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 family: priorityState.Family,
             };
 
-            const res = await fetch(`${API_BASE}/create-user`, {
+            const res = await fetch(`${AUTH_BASE}/signup`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     email,
-                    passwordHash,
+                    password,
                     firstName,
                     lastName,
                     settings: { categoryWeights },
@@ -251,8 +263,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const data = await res.json();
 
             if (res.ok) {
-                setMessage("Account created successfully! You can log in now.", true);
-                showSignupStep1();
+                setMessage("Account created successfully! Log in below.", true);
+                showLogin();
+                document.getElementById("login-email").value = email;
             } else {
                 setMessage(data.error || "Signup failed.", false);
             }

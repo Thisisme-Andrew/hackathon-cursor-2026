@@ -90,6 +90,16 @@ body {
     background: #69c39a;
 }
 
+.orion-cta:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #a8c9b8;
+}
+
+.orion-cta:disabled:hover {
+    background: #a8c9b8;
+}
+
 .priority-title {
     color: var(--orion-navy-soft);
     font-size: 14px;

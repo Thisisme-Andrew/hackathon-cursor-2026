@@ -152,11 +152,16 @@
     </main>
 
     <script id="demo-seed" type="application/json">{{ demo_seed | tojson }}</script>
+    <script src="{{ url_for('static', filename='js/auth-utils.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/demo.js') }}" defer></script>
 
     <!-- ===== Results Screen ===== -->
     <div id="results-screen" class="fixed inset-0 hidden overflow-y-auto" style="z-index:30;background:var(--bg)">
-        <div class="mx-auto max-w-sm px-5 py-10">
+        <div id="results-loading" class="hidden mx-auto max-w-sm px-5 py-20 text-center">
+            <p class="text-lg font-semibold" style="color:#2f426c">Analyzing your session...</p>
+            <p class="mt-2 text-sm" style="color:#8da0be">Extracting tasks from your responses</p>
+        </div>
+        <div id="results-content" class="mx-auto max-w-sm px-5 py-10">
 
             <div class="mb-6 text-center">
                 <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full"
@@ -180,10 +185,15 @@
             <div class="card mb-6 border-0 bg-white shadow-sm">
                 <div class="card-body gap-0 p-5">
                     <div class="mb-3 flex items-center justify-between">
-                        <p class="text-xs font-bold uppercase tracking-widest" style="color:#8da0be">6 Tasks queued</p>
-                        <p class="text-xs" style="color:#8da0be">Tap 📅 to add a due date</p>
+                        <p id="task-count-label" class="text-xs font-bold uppercase tracking-widest" style="color:#8da0be">Tasks queued</p>
+                        <p class="text-xs" style="color:#8da0be">📅 due date · ✏️ edit · 🗑️ delete</p>
                     </div>
                     <ul id="task-list"></ul>
+                    <button id="add-task-btn" type="button"
+                        class="mt-4 w-full rounded-xl border-2 border-dashed px-4 py-3 text-sm font-semibold transition-colors"
+                        style="border-color:color-mix(in srgb,var(--accent) 40%,white 60%);color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,white 92%)">
+                        + Add a task
+                    </button>
                 </div>
             </div>
 
