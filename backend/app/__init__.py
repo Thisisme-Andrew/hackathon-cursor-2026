@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 
 
 def create_app():
@@ -14,6 +14,13 @@ def create_app():
     def home():
         # Render the frontend landing page for quick local testing.
         return render_template("index.html")
+
+    @app.route("/auth")
+    def auth_page():
+        initial_mode = request.args.get("mode", "signup")
+        if initial_mode not in {"login", "signup"}:
+            initial_mode = "signup"
+        return render_template("auth.html", initial_mode=initial_mode)
 
     try:
         from app.routes.user_routes import user_bp
