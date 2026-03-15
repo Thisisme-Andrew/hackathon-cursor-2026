@@ -17,8 +17,10 @@ def create_app():
 
     try:
         from app.routes.user_routes import user_bp
+        from app.routes.task_routes import task_bp
 
         app.register_blueprint(user_bp, url_prefix="/users")
+        app.register_blueprint(task_bp, url_prefix="/tasks")
     except Exception:
         # Keep the app bootable even when database env vars are not set.
         pass
