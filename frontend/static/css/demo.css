@@ -194,6 +194,37 @@ body.mode-urgent .ring.r3 {
     background: color-mix(in srgb, var(--accent) 7%, white 93%);
     color: var(--accent);
     cursor: pointer;
+    transition: background-color .16s ease, color .16s ease, box-shadow .16s ease;
+}
+
+.mode-pill:hover {
+    background: color-mix(in srgb, var(--accent) 14%, white 86%);
+    box-shadow: 0 6px 14px rgba(88, 109, 143, 0.12);
+}
+
+#tap-speak,
+#type-submit,
+#voice-confirm {
+    transition: filter .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+#tap-speak:hover,
+#type-submit:hover,
+#voice-confirm:hover {
+    filter: brightness(.96);
+    box-shadow: 0 10px 18px color-mix(in srgb, var(--accent) 28%, transparent 72%);
+}
+
+#mute-record,
+#stop-record {
+    transition: background-color .16s ease, color .16s ease, box-shadow .16s ease;
+}
+
+#mute-record:hover,
+#stop-record:hover {
+    background: #e6edf5;
+    color: #536a8f;
+    box-shadow: 0 4px 10px rgba(88, 109, 143, 0.1);
 }
 
 .switch-shell {

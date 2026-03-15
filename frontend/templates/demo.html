@@ -17,17 +17,17 @@
     data-board-href="{{ board_href }}">
     <header class="border-b border-[var(--line)] px-5 py-3">
         <div class="mx-auto flex w-full max-w-[1200px] items-center justify-between">
-            <a href="{{ url_for('home') }}" class="inline-flex items-center gap-2 text-xs font-bold orion-wordmark">
+            <a href="{{ url_for('home') }}" class="inline-flex items-center gap-2 text-sm font-bold orion-wordmark">
                 <span class="h-2.5 w-2.5 rounded-full bg-[var(--accent)]"></span>
                 ORION
             </a>
             <div class="flex items-center gap-2">
                 {% if session_mode %}
                 <a href="{{ board_href }}"
-                    class="mode-pill btn h-8 min-h-0 rounded-full px-4 text-xs font-bold normal-case">Board</a>
+                    class="mode-pill btn h-9 min-h-0 rounded-full px-5 text-sm font-bold normal-case">Board</a>
                 {% endif %}
                 <button id="mode-toggle" type="button"
-                    class="mode-pill btn h-8 min-h-0 rounded-full px-4 text-xs font-bold normal-case">
+                    class="mode-pill btn h-9 min-h-0 rounded-full px-5 text-sm font-bold normal-case">
                     <span id="mode-icon">&#127811;</span>
                     <span id="mode-text">Calm</span>
                 </button>
@@ -35,13 +35,13 @@
         </div>
         <div class="mx-auto mt-4 flex w-full max-w-[1200px] items-center gap-3 text-sm">
             <div class="top-progress flex-1 rounded-full"><span></span></div>
-            <span id="step-label" class="text-xs font-bold text-[#7488b0]">1 / 4</span>
+            <span id="step-label" class="text-sm font-bold text-[#7488b0]">1 / 4</span>
         </div>
         {% if session_mode %}
-        <p class="mx-auto mt-2 w-full max-w-[1200px] text-right text-[11px] font-medium text-[#9aa9c0]">Use mode to
+        <p class="mx-auto mt-2 w-full max-w-[1200px] text-right text-xs font-medium text-[#9aa9c0]">Use mode to
             switch calm or urgent tone</p>
         {% else %}
-        <p class="mx-auto mt-2 w-full max-w-[1200px] text-right text-[11px] font-medium text-[#9aa9c0]">Click mode to
+        <p class="mx-auto mt-2 w-full max-w-[1200px] text-right text-xs font-medium text-[#9aa9c0]">Click mode to
             switch tone</p>
         {% endif %}
     </header>
