@@ -10,206 +10,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap"
         rel="stylesheet" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}" />
-    <style>
-        :root {
-            --orion-navy: #334772;
-            --orion-navy-soft: #7588ac;
-            --orion-mint: #7ccfa9;
-            --orion-bg: #f4f6fa;
-            --orion-line: #d6dce6;
-        }
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}" />
 
-        body {
-            font-family: "Poppins", sans-serif;
-        }
-
-        .auth-card {
-            border-radius: 34px;
-            background: #f8f9fb;
-            box-shadow: 0 28px 55px rgba(64, 82, 120, 0.3);
-        }
-
-        .soft-tab-shell {
-            border-radius: 22px;
-            background: #eff1f5;
-            padding: 6px;
-        }
-
-        .soft-tab {
-            height: 46px;
-            border: 0;
-            border-radius: 16px;
-            font-size: 16px;
-            font-weight: 700;
-            color: #a8b5c8;
-            background: transparent;
-            box-shadow: none;
-            text-transform: none;
-        }
-
-        .soft-tab.active {
-            color: var(--orion-navy);
-            background: #ffffff;
-            box-shadow: 0 3px 10px rgba(97, 114, 147, 0.15);
-        }
-
-        .orion-input {
-            border-radius: 16px;
-            border: 1.6px solid var(--orion-line);
-            background: #f0f2f5;
-            color: #7082a4;
-            font-size: 16px;
-            padding-left: 18px;
-            height: 58px;
-        }
-
-        .orion-input::placeholder {
-            color: #a0adbf;
-            opacity: 1;
-        }
-
-        .orion-label {
-            margin-bottom: 10px;
-            color: var(--orion-navy-soft);
-            font-size: 13px;
-            letter-spacing: 0.14em;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-
-        .orion-cta {
-            border: 0;
-            border-radius: 999px;
-            height: 56px;
-            background: var(--orion-mint);
-            color: #fff;
-            font-size: 15px;
-            font-weight: 700;
-            text-transform: none;
-            box-shadow: 0 22px 32px rgba(124, 207, 169, 0.34);
-        }
-
-        .orion-cta:hover {
-            background: #69c39a;
-        }
-
-        .priority-title {
-            color: var(--orion-navy-soft);
-            font-size: 14px;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            line-height: 1.5;
-            text-transform: uppercase;
-        }
-
-        .priority-subtitle {
-            color: #a3afc1;
-            font-size: 12px;
-            font-weight: 500;
-        }
-
-        .priority-row {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) auto;
-            align-items: center;
-            gap: 10px;
-            margin-top: 9px;
-        }
-
-        .priority-name {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--orion-navy);
-            font-size: 14px;
-            line-height: 1.1;
-            font-weight: 600;
-        }
-
-        .priority-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 18px;
-            height: 18px;
-            color: #8796b1;
-            flex: 0 0 18px;
-        }
-
-        .priority-score-group {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-        }
-
-        .priority-score {
-            width: 34px;
-            height: 34px;
-            border-radius: 999px;
-            border: 0;
-            font-size: 14px;
-            font-weight: 700;
-            color: #8e9db5;
-            background: #ecedf1;
-            transition: all .12s ease;
-        }
-
-        .priority-score.active {
-            background: var(--orion-mint);
-            color: #fff;
-            box-shadow: 0 6px 16px rgba(124, 207, 169, 0.35);
-        }
-
-        .brand-dot {
-            background: #7ccfa9;
-        }
-
-        .mint-link {
-            color: #64b88f;
-        }
-
-        .auth-msg-success {
-            background: #edf9f2;
-            color: #3a8969;
-        }
-
-        .auth-msg-error {
-            background: #fff2ef;
-            color: #c56f5b;
-        }
-
-        @media (max-width: 420px) {
-
-            .soft-tab,
-            .orion-cta {
-                font-size: 15px;
-            }
-
-            .priority-name {
-                font-size: 13px;
-            }
-
-            .orion-label {
-                font-size: 12px;
-            }
-
-            .priority-title {
-                font-size: 13px;
-            }
-
-            .orion-input {
-                font-size: 15px;
-                height: 54px;
-            }
-        }
-    </style>
 </head>
 
 <body class="min-h-screen bg-gradient-to-b from-[#f7fafc] via-white to-[#eef4fb] text-slate-700">
     <div class="pointer-events-none fixed inset-0 bg-[#aeb5c2]/30 backdrop-blur-sm"></div>
 
-    <main class="relative z-10 mx-auto flex min-h-screen w-full max-w-md items-center px-5 py-7">
-        <section class="auth-card w-full p-5 sm:p-5" data-auth-root data-initial-mode="{{ initial_mode }}">
+    <main class="relative z-10 mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-5 py-7">
+        <section class="auth-card w-full p-5 sm:p-5" data-auth-root data-initial-mode="{{ initial_mode }}"
+            data-next-url="{{ next_url }}">
             <div class="mb-5 flex items-center justify-between">
                 <div class="flex items-center gap-2">
                     <span class="brand-dot h-2.5 w-2.5 rounded-full"></span>
@@ -238,14 +48,16 @@
                     <div class="relative">
                         <input id="login-password" type="password" placeholder="Your password"
                             class="orion-input input input-bordered w-full pr-12" />
-                        <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#a1afc2]">
+                        <button id="toggle-login-password" type="button"
+                            class="absolute right-4 top-1/2 -translate-y-1/2 border-0 bg-transparent p-0 text-[#a1afc2] hover:text-[#8798b6]"
+                            aria-label="Show or hide password" aria-pressed="false">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor" stroke-width="1.8">
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12s-3.75 6.75-9.75 6.75S2.25 12 2.25 12Z" />
                                 <circle cx="12" cy="12" r="3" />
                             </svg>
-                        </span>
+                        </button>
                     </div>
                 </label>
 
@@ -279,8 +91,20 @@
 
                 <label class="form-control w-full">
                     <span class="orion-label label-text">Password</span>
-                    <input id="signup-password" type="password" placeholder="At least 6 characters"
-                        class="orion-input input input-bordered w-full" />
+                    <div class="relative">
+                        <input id="signup-password" type="password" placeholder="At least 6 characters"
+                            class="orion-input input input-bordered w-full pr-12" />
+                        <button id="toggle-signup-password" type="button"
+                            class="absolute right-4 top-1/2 -translate-y-1/2 border-0 bg-transparent p-0 text-[#a1afc2] hover:text-[#8798b6]"
+                            aria-label="Show or hide password" aria-pressed="false">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor" stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12s-3.75 6.75-9.75 6.75S2.25 12 2.25 12Z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                        </button>
+                    </div>
                 </label>
 
                 <button id="signup-next" type="button" class="orion-cta btn mt-3 w-full">
@@ -303,9 +127,12 @@
             </div>
 
         </section>
+
+        {% include 'partials/footer.html' %}
     </main>
 
     <script src="{{ url_for('static', filename='js/auth.js') }}" defer></script>
+    {% include 'partials/team-dialog.html' %}
 </body>
 
 </html>

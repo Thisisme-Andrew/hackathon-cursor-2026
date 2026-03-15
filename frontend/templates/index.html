@@ -6,138 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Orion</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}" />
-    <style>
-        @keyframes breathe-dot {
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}" />
 
-            0%,
-            100% {
-                transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(124, 207, 169, 0.35);
-            }
-
-            50% {
-                transform: scale(1.22);
-                box-shadow: 0 0 0 11px rgba(124, 207, 169, 0);
-            }
-        }
-
-        @keyframes breathe-ring {
-
-            0%,
-            100% {
-                opacity: 0.45;
-                transform: scale(1);
-            }
-
-            50% {
-                opacity: 0.28;
-                transform: scale(1.04);
-            }
-        }
-
-        @keyframes orb-breathe {
-
-            0%,
-            100% {
-                transform: scale(1);
-                box-shadow: 0 14px 36px rgba(112, 194, 158, 0.28);
-            }
-
-            50% {
-                transform: scale(1.07);
-                box-shadow: 0 22px 52px rgba(112, 194, 158, 0.42);
-            }
-        }
-
-        @keyframes ripple-boost {
-            0% {
-                transform: scale(1);
-                opacity: 0.45;
-            }
-
-            100% {
-                transform: scale(1.18);
-                opacity: 0;
-            }
-        }
-
-        .orion-orb {
-            width: 190px;
-            height: 190px;
-            border-radius: 9999px;
-            background: radial-gradient(circle at 30% 30%, #daf7ea 0%, #9dddbf 50%, #78cfa8 100%);
-            box-shadow: 0 16px 42px rgba(112, 194, 158, 0.32);
-            animation: orb-breathe 2.1s ease-in-out infinite;
-            cursor: pointer;
-            transition: filter .2s ease;
-        }
-
-        .orion-orb:hover {
-            filter: saturate(1.1) brightness(1.03);
-        }
-
-        .orion-orb:active {
-            animation-duration: 1.2s;
-        }
-
-        .orion-ring-1,
-        .orion-ring-2,
-        .orion-ring-3 {
-            position: absolute;
-            border-radius: 9999px;
-            border: 1.5px solid rgba(127, 201, 168, 0.34);
-            animation: breathe-ring 4.6s ease-in-out infinite;
-        }
-
-        .orion-ring-1 {
-            width: 228px;
-            height: 228px;
-        }
-
-        .orion-ring-2 {
-            width: 264px;
-            height: 264px;
-            border-color: rgba(127, 201, 168, 0.24);
-            animation-delay: .35s;
-        }
-
-        .orion-ring-3 {
-            width: 300px;
-            height: 300px;
-            border-color: rgba(127, 201, 168, 0.2);
-            animation-delay: .7s;
-        }
-
-        .orion-logo-dot {
-            background: #7ccfa9;
-            animation: breathe-dot 1.9s ease-in-out infinite;
-        }
-
-        .demo-link {
-            border-color: #c8e7d9;
-            color: #64b88f;
-        }
-
-        .demo-link:hover {
-            border-color: #a6dcc0;
-            background: #edf9f2;
-        }
-
-        .mint-link {
-            color: #64b88f;
-        }
-
-        .ripple-boost .orion-ring-1,
-        .ripple-boost .orion-ring-2,
-        .ripple-boost .orion-ring-3 {
-            animation: ripple-boost .9s ease-out;
-        }
-
-        #team-dialog::backdrop {
-            background: rgba(44, 57, 86, 0.35);
-            backdrop-filter: blur(3px);
-        }
-    </style>
 </head>
 
 <body class="min-h-screen bg-white text-slate-700">
@@ -182,46 +52,13 @@
             </div>
         </section>
 
-        <footer
-            class="mt-auto flex items-center justify-center gap-3 pt-6 text-center text-xs tracking-wide text-slate-400">
-            <span>Copyright 2026 Orion</span>
-            <span class="text-slate-300">•</span>
-            <button id="open-team" type="button" class="font-semibold text-[#7b8eb4] hover:text-[#5f7297]">Meet the
-                team</button>
-        </footer>
+        {% set enable_team_dialog = true %}
+        {% include 'partials/footer.html' %}
     </main>
 
-    <dialog id="team-dialog" class="w-[90%] max-w-sm rounded-2xl border-0 bg-white p-0 shadow-2xl">
-        <div class="px-5 py-4">
-            <div class="mb-3 flex items-center justify-between">
-                <h2 class="text-base font-bold tracking-wide text-[#334772]">Developers</h2>
-                <form method="dialog">
-                    <button class="btn btn-circle btn-ghost btn-sm text-slate-400">x</button>
-                </form>
-            </div>
-            <ul class="space-y-2 text-sm text-[#60749d]">
-                <li>Sagesse Ariyanto</li>
-                <li>Vincent Iyegbuye</li>
-                <li>Andy</li>
-                <li>Brody</li>
-            </ul>
-        </div>
-    </dialog>
+    {% include 'partials/team-dialog.html' %}
+    <script src="{{ url_for('static', filename='js/index.js') }}" defer></script>
 
-    <script>
-        const orbWrap = document.getElementById("orb-wrap");
-        const orbButton = document.getElementById("orb-button");
-        const teamDialog = document.getElementById("team-dialog");
-        const openTeam = document.getElementById("open-team");
-
-        orbButton.addEventListener("click", () => {
-            orbWrap.classList.remove("ripple-boost");
-            void orbWrap.offsetWidth;
-            orbWrap.classList.add("ripple-boost");
-        });
-
-        openTeam.addEventListener("click", () => teamDialog.showModal());
-    </script>
 </body>
 
 </html>

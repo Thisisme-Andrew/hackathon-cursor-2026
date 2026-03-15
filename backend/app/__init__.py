@@ -20,7 +20,12 @@ def create_app():
         initial_mode = request.args.get("mode", "signup")
         if initial_mode not in {"login", "signup"}:
             initial_mode = "signup"
-        return render_template("auth.html", initial_mode=initial_mode)
+        next_url = request.args.get("next", "/dashboard")
+        if not next_url.startswith("/"):
+            next_url = "/dashboard"
+        return render_template(
+            "auth.html", initial_mode=initial_mode, next_url=next_url
+        )
 
     @app.route("/demo")
     def demo_page():

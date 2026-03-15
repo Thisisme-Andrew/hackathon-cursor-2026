@@ -12,6 +12,22 @@ document.addEventListener("DOMContentLoaded", () => {
     const viewSignup2 = document.getElementById("view-signup-step2");
 
     const authMessage = document.getElementById("auth-message");
+    const nextUrl = root.dataset.nextUrl || "/dashboard";
+
+    function bindPasswordToggle(inputId, buttonId) {
+        const input = document.getElementById(inputId);
+        const button = document.getElementById(buttonId);
+
+        if (!input || !button) {
+            return;
+        }
+
+        button.addEventListener("click", () => {
+            const showing = input.type === "text";
+            input.type = showing ? "password" : "text";
+            button.setAttribute("aria-pressed", String(!showing));
+        });
+    }
 
     const priorities = [
         "Work",
@@ -250,5 +266,11 @@ document.addEventListener("DOMContentLoaded", () => {
         showLogin();
     } else {
         showSignupStep1();
+    }
+
+    const openTeamBtn = document.getElementById("open-team");
+    const teamDialog = document.getElementById("team-dialog");
+    if (openTeamBtn && teamDialog) {
+        openTeamBtn.addEventListener("click", () => teamDialog.showModal());
     }
 });
