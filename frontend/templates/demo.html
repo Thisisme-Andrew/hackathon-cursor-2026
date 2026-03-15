@@ -36,7 +36,7 @@
         </div>
         <div class="mx-auto mt-4 flex w-full max-w-[1200px] items-center gap-3 text-sm">
             <div class="top-progress flex-1 rounded-full"><span></span></div>
-            <span id="step-label" class="text-sm font-bold text-[#7488b0]">1 / 4</span>
+            <span id="step-label" class="text-sm font-bold text-[#7488b0]">Question</span>
         </div>
         {% if session_mode %}
         <p class="mx-auto mt-2 w-full max-w-[1200px] text-right text-xs font-medium text-[#9aa9c0]">Use mode to
@@ -173,6 +173,11 @@
                 </div>
                 <h2 class="mb-1 text-2xl font-bold" style="color:#2f426c">Session complete</h2>
                 <p class="text-sm" style="color:#8da0be">Orion found your core themes and built your focus plan.</p>
+            </div>
+
+            <div id="breathing-cta" class="hidden mb-6 rounded-2xl border border-[var(--line)] p-5 text-center" style="background:color-mix(in srgb,var(--accent) 8%,white 92%)">
+                <p class="mb-3 text-sm font-semibold" style="color:#2f426c">Take a moment to reset</p>
+                <a href="/breathing" class="btn inline-flex h-11 min-h-0 items-center justify-center rounded-full border-0 px-6 text-base font-bold normal-case text-white" style="background:var(--accent);box-shadow:0 8px 20px var(--accent-soft)">Try a guided breathing exercise</a>
             </div>
 
             <div class="card mb-4 border-0 bg-white shadow-sm">

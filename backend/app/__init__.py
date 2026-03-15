@@ -141,5 +141,10 @@ def create_app():
     def dashboard_page():
         return render_template("dashboard.html", dashboard_seed=_build_dashboard_seed())
 
+    @app.route("/breathing")
+    def breathing_page():
+        return_url = request.args.get("return_url", "/demo")
+        return render_template("breathing.html", return_url=return_url)
+
     _register_blueprints(app)
     return app

@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Guided breathing – Orion</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/demo.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/breathing.css') }}" />
+</head>
+
+<body class="min-h-screen mode-calm" style="background:var(--bg);font-family:'Poppins',sans-serif">
+    <header class="border-b border-[var(--line)] px-5 py-3">
+        <div class="mx-auto flex w-full max-w-[1200px] items-center justify-between">
+            <a href="{{ url_for('home') }}" class="inline-flex items-center gap-2 text-sm font-bold orion-wordmark">
+                <span class="h-2.5 w-2.5 rounded-full bg-[var(--accent)]"></span>
+                ORION
+            </a>
+            <a href="{{ return_url }}" class="text-sm font-semibold text-[#6d84ae] hover:text-[#5a6f94]">Back</a>
+        </div>
+    </header>
+
+    <main class="mx-auto flex min-h-[calc(100vh-120px)] w-full max-w-md flex-col items-center justify-center px-6 py-12">
+        <p class="mb-8 text-center text-base text-[#8da0be]">
+            A short guided breath can help you reset.
+        </p>
+
+        <div id="breathing-visual" class="breathing-visual">
+            <div id="breathing-circle" class="breathing-circle" aria-hidden="true"></div>
+        </div>
+        <p id="breathing-phase-label" class="mt-8 text-xl font-semibold text-[var(--text)]">Breathe in</p>
+        <p id="breathing-countdown" class="mt-2 text-sm text-[#8da0be]"></p>
+
+        <div id="breathing-controls" class="mt-10 flex flex-col items-center gap-4">
+            <button id="breathing-start" type="button"
+                class="btn h-12 min-h-0 rounded-full border-0 bg-[var(--accent)] px-8 text-lg font-bold normal-case text-white shadow-[0_12px_24px_var(--accent-soft)]">
+                Start
+            </button>
+            <button id="breathing-pause" type="button"
+                class="btn hidden h-10 min-h-0 rounded-full border border-[var(--line)] bg-white px-6 text-sm font-semibold normal-case text-[#6d84ae]">
+                Pause
+            </button>
+            <a id="breathing-finish" href="{{ return_url }}"
+                class="mt-4 text-sm font-medium text-[#8da0be] hover:text-[#6d84ae]">Finish</a>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/breathing.js') }}" defer></script>
+</body>
+
+</html>
