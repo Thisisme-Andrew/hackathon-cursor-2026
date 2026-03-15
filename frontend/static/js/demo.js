@@ -317,12 +317,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
         changeQuestionBtn.classList.add("hidden");
         interactionStage.classList.add("is-loading");
-        void speakQuestion(nextQuestion);
-
-        typeIntoElement(questionText, nextQuestion, 34, () => {
-            interactionStage.classList.remove("is-loading");
-            changeQuestionBtn.classList.remove("hidden");
-        });
+        // Start typing animation only after audio is ready and starts playing
+        (async () => {
+            try {
+                await speakQuestion(nextQuestion);
+            } catch (e) {
+                // fallback: still show text if audio fails
+            }
+            typeIntoElement(questionText, nextQuestion, 34, () => {
+                interactionStage.classList.remove("is-loading");
+                changeQuestionBtn.classList.remove("hidden");
+            });
+        })();
         resetRecordingUi();
         voiceReview.classList.add("hidden");
         tapSpeakBtn.classList.remove("hidden");
