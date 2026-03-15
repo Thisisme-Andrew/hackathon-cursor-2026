@@ -1,7 +1,7 @@
 import json
 import re
 
-from openai import OpenAI
+from groq import Groq
 from config import Config
 
 WELLBEING_SYSTEM_PROMPT = """You are an expert at assessing psychological state from spoken or written transcript text.
@@ -27,10 +27,7 @@ def extract_wellbeing_scores(text: str) -> dict:
         return {"error": "text is required and cannot be empty."}
 
     try:
-        client = OpenAI(
-            api_key=Config.GROQ_API_KEY,
-            base_url="https://api.groq.com/openai/v1",
-        )
+        client = Groq(api_key=Config.GROQ_API_KEY)
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[

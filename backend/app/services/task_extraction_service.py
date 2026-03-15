@@ -1,7 +1,7 @@
 import json
 import re
 
-from openai import OpenAI
+from groq import Groq
 from config import Config
 from app.services.task_services import get_all_tasks
 
@@ -73,7 +73,7 @@ def _resolve_existing_task_id(
     extracted_title: str,
     extracted_description: str,
     candidates: list,
-    client: OpenAI,
+    client: Groq,
 ) -> str | None:
     """
     Ask Groq which existing task (if any) the user was referring to.
@@ -181,10 +181,7 @@ def extract_tasks_from_transcript(text: str, userId: str) -> dict:
         return {"error": "userId is required."}
 
     try:
-        client = OpenAI(
-            api_key=Config.GROQ_API_KEY,
-            base_url="https://api.groq.com/openai/v1",
-        )
+        client = Groq(api_key=Config.GROQ_API_KEY)
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[

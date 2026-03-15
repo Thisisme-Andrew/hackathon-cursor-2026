@@ -1,6 +1,6 @@
 from typing import Optional
 
-from openai import OpenAI
+from groq import Groq
 from config import Config
 
 DEFAULT_QUESTION = "Summarize and note key points from this speech."
@@ -19,10 +19,7 @@ def query_speech(text: str, question: Optional[str] = None) -> dict:
     prompt = question.strip() if question and question.strip() else DEFAULT_QUESTION
 
     try:
-        client = OpenAI(
-            api_key=Config.GROQ_API_KEY,
-            base_url="https://api.groq.com/openai/v1",
-        )
+        client = Groq(api_key=Config.GROQ_API_KEY)
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
