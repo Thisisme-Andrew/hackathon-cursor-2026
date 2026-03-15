@@ -4,21 +4,37 @@ import re
 from groq import Groq
 from config import Config
 from app.services.task_services import get_all_tasks
+from app.services.user_service import get_user_by_id
+from app.models.task_model import TASK_CATEGORIES
 
-TASK_EXTRACTION_SYSTEM_PROMPT = """You are a task-extraction assistant. The user is speaking or writing about todo items they want to add.
+# Map task category (display name) to user settings.categoryWeights key
+CATEGORY_TO_WEIGHT_KEY = {
+    "Work": "work",
+    "Health": "health",
+    "Relationships": "relationships",
+    "Finance": "finance",
+    "Personal Growth": "personalGrowth",
+    "Spirituality": "spirituality",
+    "Family": "family",
+}
+
+CATEGORIES_LIST = ", ".join(sorted(TASK_CATEGORIES))
+
+TASK_EXTRACTION_SYSTEM_PROMPT = f"""You are a task-extraction assistant. The user is speaking or writing about todo items they want to add.
 Extract one or more tasks from the transcript. For each task provide:
 - title (string, required): short task name
-- description (string, can be empty)
+- description (string, required): one sentence summarizing context, details, or intent from the user's utterance for this task; never leave empty
+- category (string, required): exactly one of: {CATEGORIES_LIST}
 - urgency (integer 1-10): how time-sensitive
 - effort (integer 1-10): how much effort required
 - importance (integer 1-10): how important
 - estimatedTimeToComplete (integer minutes, or null if unknown)
 - isOpenLoop (boolean): true if captured quickly / not fully defined
-- nextAction (object): { "text": "smallest concrete next step", "estimateMins": number }
+- nextAction (object): {{ "text": "smallest concrete next step", "estimateMins": number }}
 - dueAt (ISO date-time string or null)
 
-Estimate urgency, effort, importance when the user does not state them. Return ONLY a valid JSON array of task objects, no explanation.
-Example: [{"title": "Ship dashboard", "description": "", "urgency": 7, "effort": 5, "importance": 8, "estimatedTimeToComplete": 120, "isOpenLoop": false, "nextAction": {"text": "Open the repo", "estimateMins": 2}, "dueAt": "2025-04-15T17:00:00Z"}]"""
+Estimate urgency, effort, importance when the user does not state them. Infer category from the task content (e.g. banking/financial -> Finance). Return ONLY a valid JSON array of task objects, no explanation.
+Example: [{{"title": "Open trading account at bank", "description": "User wants to open an account at a bank branch.", "category": "Finance", "urgency": 5, "effort": 4, "importance": 7, "estimatedTimeToComplete": 60, "isOpenLoop": false, "nextAction": {{"text": "Find branch", "estimateMins": 5}}, "dueAt": null}}]"""
 
 TASK_RESOLUTION_SYSTEM_PROMPT = """You are a task-matching assistant. The user said something that was interpreted as a task with a title and optional description.
 You are given that predicted title and description, and a list of existing tasks (each with taskId, title, description).
@@ -139,9 +155,16 @@ def _normalize_task(raw: dict) -> dict:
                 return None
         except (TypeError, ValueError):
             return None
+    category = raw.get("category") or "Work"
+    if isinstance(category, str):
+        category = category.strip()
+    if category not in TASK_CATEGORIES:
+        category = "Work"
+    desc = str(raw.get("description") or "").strip()
     task = {
         "title": title,
-        "description": str(raw.get("description") or "").strip(),
+        "description": desc if desc else "Added from user utterance.",
+        "category": category,
         "urgency": int(urgency),
         "effort": int(effort),
         "importance": int(importance),
@@ -216,6 +239,23 @@ def extract_tasks_from_transcript(text: str, userId: str) -> dict:
             normalized = _normalize_task(item)
             if normalized:
                 tasks.append(normalized)
+
+        # Nudge importance by user's categoryWeights (Likert 0-5)
+        user = get_user_by_id(userId)
+        if user:
+            weights = (user.get("settings") or {}).get("categoryWeights") or {}
+            for task in tasks:
+                category = task.get("category", "Work")
+                weight_key = CATEGORY_TO_WEIGHT_KEY.get(category, "work")
+                weight = weights.get(weight_key, 0)
+                try:
+                    w = float(weight) if weight is not None else 0
+                    w = max(0, min(5, w))
+                except (TypeError, ValueError):
+                    w = 0
+                delta = (w - 2.5) * 0.8
+                importance = task["importance"] + delta
+                task["importance"] = max(1, min(10, round(importance)))
 
         # Match to existing user tasks: fetch and resolve
         existing_result = get_all_tasks(userId)

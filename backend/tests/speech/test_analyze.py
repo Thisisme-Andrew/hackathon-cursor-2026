@@ -23,6 +23,8 @@ _BACKEND = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 if _BACKEND not in sys.path:
     sys.path.insert(0, _BACKEND)
 
+from app.models.task_model import TASK_CATEGORIES
+
 DEFAULT_BASE_URL = "http://127.0.0.1:5000"
 TEST_USER_ID = "00000000-0000-0000-0000-000000000001"
 
@@ -31,10 +33,14 @@ WELLBEING_KEYS = ("stressAnxiousArousal", "fatigueSleepiness", "cognitiveLoad", 
 # Test user with existing tasks in DB (Review quarterly goals, Schedule team standup, etc.)
 EXISTING_TASK_TEST_USER_ID = "528f1389-3e8b-478f-ba28-83522ef5e9d0"
 
-# Test cases: id, transcript, expected_min_tasks, expected_title_keywords (at least one must appear in some task title)
+# Test cases: id, transcript, expected_min_tasks, expected_title_keywords (each must appear in at least one task title)
 # Optional: wellbeing_ranges = { key: (min, max) } to assert score ranges
 # Optional: userId = override TEST_USER_ID for this case
 # Optional: expect_task_id_for_title = "Exact saved title" to assert at least one task has this title and has taskId (integration: needs DB + Groq match)
+#
+# Wellbeing tests: each dimension (stressAnxiousArousal, fatigueSleepiness, cognitiveLoad, decisionParalysis)
+# is targeted by at least one case so scores can drive tailored interventions (e.g. breathing for stress,
+# micro-break for fatigue, next-action scaffold for decision paralysis).
 ANALYZE_TEST_CASES = [
     {
         "id": "paralyzed_decision",
@@ -48,6 +54,82 @@ ANALYZE_TEST_CASES = [
             "decisionParalysis": (8, 10),
         },
     },
+    # --- Wellbeing-focused cases (todo/planning context; scores used to tailor interventions) ---
+    {
+        "id": "wellbeing_stress_anxious",
+        "transcript": (
+            "I'm really worried about the presentation on Friday. I still have to finish the slides and "
+            "practice and I keep thinking I'm going to mess it up. I also need to book the dentist and "
+            "reply to Sarah. I can't stop thinking about everything that could go wrong."
+        ),
+        "expected_min_tasks": 2,
+        "expected_title_keywords": ["presentation", "slides", "dentist", "Sarah"],
+        "wellbeing_ranges": {
+            "stressAnxiousArousal": (6, 10),
+            "fatigueSleepiness": (1, 5),
+            "cognitiveLoad": (3, 7),
+            "decisionParalysis": (2, 6),
+        },
+    },
+    {
+        "id": "wellbeing_fatigue_sleepiness",
+        "transcript": (
+            "I didn't sleep well last night. I need to send the report to Mike and pick up the dry cleaning. "
+            "I'm just so tired, I can't really focus. What was the other thing... oh, call the vet. Yeah."
+        ),
+        "expected_min_tasks": 2,
+        "expected_title_keywords": ["report", "dry cleaning", "vet"],
+        "wellbeing_ranges": {
+            "stressAnxiousArousal": (2, 5),
+            "fatigueSleepiness": (6, 10),
+            "cognitiveLoad": (3, 7),
+            "decisionParalysis": (2, 6),
+        },
+    },
+    {
+        "id": "wellbeing_cognitive_load",
+        "transcript": (
+            "Um so I need to uh get the car serviced and uh call the bank about the thing, and then "
+            "the insurance form and uh schedule the team meeting and... there's more I'm forgetting. "
+            "I've got like ten things and I keep losing track."
+        ),
+        "expected_min_tasks": 3,
+        "expected_title_keywords": ["car", "bank", "insurance", "meeting"],
+        "wellbeing_ranges": {
+            "stressAnxiousArousal": (2, 6),
+            "fatigueSleepiness": (2, 5),
+            "cognitiveLoad": (6, 10),
+            "decisionParalysis": (3, 7),
+        },
+    },
+    {
+        "id": "wellbeing_decision_paralysis_hedging",
+        "transcript": (
+            "Maybe I should do the budget first. Or should I do the email to the client? I don't know. "
+            "I guess I could do either. I'm not sure what's more important. I've got to submit the timesheet "
+            "and book the flight too. I just can't decide what to do first."
+        ),
+        "expected_min_tasks": 3,
+        "expected_title_keywords": ["budget", "email", "timesheet", "flight"],
+        "wellbeing_ranges": {
+            "stressAnxiousArousal": (2, 6),
+            "fatigueSleepiness": (2, 5),
+            "cognitiveLoad": (3, 7),
+            "decisionParalysis": (7, 10),
+        },
+    },
+    {
+        "id": "wellbeing_calm_clear",
+        "transcript": "I need to pick up milk from the store on my way home. That's the main thing for today.",
+        "expected_min_tasks": 1,
+        "expected_title_keywords": ["milk", "store"],
+        "wellbeing_ranges": {
+            "stressAnxiousArousal": (1, 4),
+            "fatigueSleepiness": (1, 4),
+            "cognitiveLoad": (1, 4),
+            "decisionParalysis": (1, 4),
+        },
+    },
     {
         "id": "existing_task_match",
         "userId": EXISTING_TASK_TEST_USER_ID,
@@ -57,53 +139,15 @@ ANALYZE_TEST_CASES = [
         "wellbeing_ranges": None,
         "expect_task_id_for_title": "Review quarterly goals",
     },
-    # {
-    #     "id": "call_sister",
-    #     "transcript": "um... i've been really meaning to call my sister lately but haven't called in a few weeks",
-    #     "expected_min_tasks": 1,
-    #     "expected_title_keywords": ["sister", "call"],
-    #     "wellbeing_ranges": None,
-    # },
-    # {
-    #     "id": "overwhelmed_multiple",
-    #     "transcript": (
-    #         "I have so much to do, I don't even know where to start. The report is due Friday, "
-    #         "I need to fix the bug in the login page, and my mom's birthday is tomorrow and I didn't get a gift. "
-    #         "I've been up all night worrying."
-    #     ),
-    #     "expected_min_tasks": 3,
-    #     "expected_title_keywords": ["report", "login", "bug", "mom", "birthday", "gift"],
-    #     "wellbeing_ranges": None,  # optional: all high for this case
-    # },
-    # {
-    #     "id": "clear_single_milk",
-    #     "transcript": "I need to pick up milk from the store on my way home.",
-    #     "expected_min_tasks": 1,
-    #     "expected_title_keywords": ["milk", "store", "pick up"],
-    #     "wellbeing_ranges": None,
-    # },
-    # {
-    #     "id": "vague_insurance",
-    #     "transcript": "Something about the insurance... I gotta deal with that.",
-    #     "expected_min_tasks": 1,
-    #     "expected_title_keywords": ["insurance"],
-    #     "wellbeing_ranges": None,
-    # },
-    # {
-    #     "id": "tired_email_john",
-    #     "transcript": "I'm so tired. I just need to send that email to John about the meeting. Can't think straight.",
-    #     "expected_min_tasks": 1,
-    #     "expected_title_keywords": ["email", "John", "meeting"],
-    #     "wellbeing_ranges": None,
-    # },
-    # {
-    #     "id": "multiple_disfluency",
-    #     "transcript": "Okay so... buy groceries, and uh return the Amazon package, and I need to schedule the dentist. Yeah.",
-    #     "expected_min_tasks": 3,
-    #     "expected_title_keywords": ["groceries", "Amazon", "package", "dentist"],
-    #     "wellbeing_ranges": None,
-    # },
 ]
+
+
+def _is_realistic_iso_date_string(s) -> bool:
+    """True if s looks like an ISO date/time string (contains digits and '-' or 'T')."""
+    if not s or not isinstance(s, str):
+        return False
+    s = s.strip()
+    return bool(s) and any(c.isdigit() for c in s) and ("-" in s or "T" in s)
 
 
 def _assert_structure(payload: dict) -> list[str]:
@@ -164,10 +208,53 @@ def _assert_structure(payload: dict) -> list[str]:
                     except (TypeError, ValueError):
                         errors.append(f"extractedTasks[{i}].{num_key} not int 1-10")
 
-            # Full shape: optional fields must have expected types when present
-            if "description" in task and task["description"] is not None:
-                if not isinstance(task["description"], str):
-                    errors.append(f"extractedTasks[{i}].description must be str, got {type(task['description']).__name__}")
+            # Required: description non-null and non-empty
+            if "description" not in task:
+                errors.append(f"extractedTasks[{i}]: missing 'description'")
+            elif task["description"] is None:
+                errors.append(f"extractedTasks[{i}].description must not be null")
+            elif not isinstance(task["description"], str):
+                errors.append(f"extractedTasks[{i}].description must be str, got {type(task['description']).__name__}")
+            elif not str(task["description"]).strip():
+                errors.append(f"extractedTasks[{i}].description must not be empty string")
+
+            # Required: category must be one of TASK_CATEGORIES
+            if "category" not in task:
+                errors.append(f"extractedTasks[{i}]: missing 'category'")
+            elif task.get("category") not in TASK_CATEGORIES:
+                errors.append(f"extractedTasks[{i}].category must be one of {sorted(TASK_CATEGORIES)}, got {task.get('category')!r}")
+
+            # Required: isOpenLoop must be present and bool
+            if "isOpenLoop" not in task:
+                errors.append(f"extractedTasks[{i}]: missing 'isOpenLoop'")
+            elif not isinstance(task["isOpenLoop"], bool):
+                errors.append(f"extractedTasks[{i}].isOpenLoop must be bool, got {type(task['isOpenLoop']).__name__}")
+
+            # Optional but when present must have correct type/values
+            if "status" in task and task["status"] is not None:
+                if not isinstance(task["status"], bool):
+                    errors.append(f"extractedTasks[{i}].status must be bool, got {type(task['status']).__name__}")
+            if "createdAt" in task and task["createdAt"] is not None:
+                v = task["createdAt"]
+                if isinstance(v, (int, float)):
+                    if v < 0:
+                        errors.append(f"extractedTasks[{i}].createdAt when number must be non-negative")
+                elif isinstance(v, str):
+                    if not _is_realistic_iso_date_string(v):
+                        errors.append(f"extractedTasks[{i}].createdAt when str must be ISO date-like")
+                else:
+                    errors.append(f"extractedTasks[{i}].createdAt must be str (ISO) or number, got {type(v).__name__}")
+            if "dueAt" in task and task["dueAt"] is not None:
+                if not isinstance(task["dueAt"], str):
+                    errors.append(f"extractedTasks[{i}].dueAt must be str (ISO) or null, got {type(task['dueAt']).__name__}")
+                elif not _is_realistic_iso_date_string(task["dueAt"]):
+                    errors.append(f"extractedTasks[{i}].dueAt must be ISO date-like when present")
+            if "completedAt" in task and task["completedAt"] is not None:
+                if not isinstance(task["completedAt"], str):
+                    errors.append(f"extractedTasks[{i}].completedAt must be str (ISO) or null, got {type(task['completedAt']).__name__}")
+                elif not _is_realistic_iso_date_string(task["completedAt"]):
+                    errors.append(f"extractedTasks[{i}].completedAt must be ISO date-like when present")
+
             if "estimatedTimeToComplete" in task and task["estimatedTimeToComplete"] is not None:
                 try:
                     etc = int(task["estimatedTimeToComplete"])
@@ -175,12 +262,6 @@ def _assert_structure(payload: dict) -> list[str]:
                         errors.append(f"extractedTasks[{i}].estimatedTimeToComplete must be non-negative int")
                 except (TypeError, ValueError):
                     errors.append(f"extractedTasks[{i}].estimatedTimeToComplete must be int or null")
-            if "isOpenLoop" in task and task["isOpenLoop"] is not None:
-                if not isinstance(task["isOpenLoop"], bool):
-                    errors.append(f"extractedTasks[{i}].isOpenLoop must be bool, got {type(task['isOpenLoop']).__name__}")
-            if "dueAt" in task and task["dueAt"] is not None:
-                if not isinstance(task["dueAt"], str):
-                    errors.append(f"extractedTasks[{i}].dueAt must be str (ISO) or null, got {type(task['dueAt']).__name__}")
             if "nextAction" in task and task["nextAction"] is not None:
                 na = task["nextAction"]
                 if not isinstance(na, dict):
@@ -216,9 +297,10 @@ def _assert_semantics(payload: dict, case: dict) -> list[str]:
 
     if keywords:
         titles = [str(t.get("title", "")).lower() for t in tasks]
-        found = any(any(kw.lower() in t for kw in keywords) for t in titles)
+        found = all(any(kw.lower() in t for t in titles) for kw in keywords)
         if not found:
-            errors.append(f"extractedTasks: no task title contained any of {keywords}; titles={titles}")
+            missing = [kw for kw in keywords if not any(kw.lower() in t for t in titles)]
+            errors.append(f"extractedTasks: no task title contained these keywords: {missing}; titles={titles}")
 
     # Optional: assert that a task with the given exact title exists and has taskId (integration / existing-task match)
     expect_title = case.get("expect_task_id_for_title")
