@@ -215,6 +215,11 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     function showResults() {
+        const isUrgent = body.classList.contains("mode-urgent");
+        const resultTasks = isUrgent
+            ? DEMO_TASKS.map((task) => ({ ...task, prio: "HIGH" }))
+            : DEMO_TASKS;
+
         // Populate theme chips
         const themeEl = document.getElementById("theme-chips");
         if (themeEl) {
@@ -228,7 +233,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Populate task list
         const taskEl = document.getElementById("task-list");
         if (taskEl) {
-            taskEl.innerHTML = DEMO_TASKS.map((t, i) => {
+            taskEl.innerHTML = resultTasks.map((t, i) => {
                 const cat  = CAT_STYLE[t.cat]  || CAT_STYLE.Work;
                 const prio = PRIO_STYLE[t.prio] || PRIO_STYLE.LOW;
                 const sep  = i > 0 ? "border-top:1px solid #f0f2f5;" : "";
@@ -350,7 +355,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     voiceConfirmBtn.addEventListener("click", () => {
         demoNote.textContent = "Saved for demo. Moving to next question...";
-        tapSpeakBtn.classList.remove("hidden");
         setTimeout(moveToNextQuestion, 520);
     });
 
@@ -366,4 +370,10 @@ document.addEventListener("DOMContentLoaded", () => {
     applyTone("calm");
     setInputMode("voice");
     updateStepUi();
+
+    const openTeamBtn = document.getElementById("open-team");
+    const teamDialog = document.getElementById("team-dialog");
+    if (openTeamBtn && teamDialog) {
+        openTeamBtn.addEventListener("click", () => teamDialog.showModal());
+    }
 });

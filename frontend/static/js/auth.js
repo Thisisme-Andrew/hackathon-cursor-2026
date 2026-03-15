@@ -12,6 +12,22 @@ document.addEventListener("DOMContentLoaded", () => {
     const viewSignup2 = document.getElementById("view-signup-step2");
 
     const authMessage = document.getElementById("auth-message");
+    const nextUrl = root.dataset.nextUrl || "/dashboard";
+
+    function bindPasswordToggle(inputId, buttonId) {
+        const input = document.getElementById(inputId);
+        const button = document.getElementById(buttonId);
+
+        if (!input || !button) {
+            return;
+        }
+
+        button.addEventListener("click", () => {
+            const showing = input.type === "text";
+            input.type = showing ? "password" : "text";
+            button.setAttribute("aria-pressed", String(!showing));
+        });
+    }
 
     const priorities = [
         "Work",
@@ -155,12 +171,18 @@ document.addEventListener("DOMContentLoaded", () => {
     tabSignup.addEventListener("click", showSignupStep1);
     document.getElementById("go-signup").addEventListener("click", showSignupStep1);
 
+    bindPasswordToggle("login-password", "toggle-login-password");
+    bindPasswordToggle("signup-password", "toggle-signup-password");
+
     document.getElementById("login-submit").addEventListener("click", () => {
         const email = document.getElementById("login-email").value.trim();
         const password = document.getElementById("login-password").value.trim();
 
         if (email === demoLogin.email && password === demoLogin.password) {
             setMessage("Demo login successful.", true);
+            setTimeout(() => {
+                window.location.assign(nextUrl);
+            }, 300);
         } else {
             setMessage("Invalid demo credentials. Try admin@gmail.com / 123456", false);
         }
@@ -170,8 +192,20 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("signup-back").addEventListener("click", showSignupStep1);
 
     document.getElementById("signup-create").addEventListener("click", () => {
-        setMessage("Demo account created locally. Backend integration pending.", true);
-        showSignupStep1();
+        const name = document.getElementById("signup-firstname").value.trim();
+        const email = document.getElementById("signup-email").value.trim();
+        const password = document.getElementById("signup-password").value.trim();
+
+        if (!name || !email || password.length < 6) {
+            setMessage("Please complete signup fields first. Password must be at least 6 characters.", false);
+            showSignupStep1();
+            return;
+        }
+
+        setMessage("Demo account created. Redirecting...", true);
+        setTimeout(() => {
+            window.location.assign(nextUrl);
+        }, 300);
     });
 
     clearMessage();
@@ -179,5 +213,11 @@ document.addEventListener("DOMContentLoaded", () => {
         showLogin();
     } else {
         showSignupStep1();
+    }
+
+    const openTeamBtn = document.getElementById("open-team");
+    const teamDialog = document.getElementById("team-dialog");
+    if (openTeamBtn && teamDialog) {
+        openTeamBtn.addEventListener("click", () => teamDialog.showModal());
     }
 });

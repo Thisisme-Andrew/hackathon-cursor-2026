@@ -1,0 +1,130 @@
+@keyframes breathe-dot {
+
+    0%,
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(124, 207, 169, 0.35);
+    }
+
+    50% {
+        transform: scale(1.22);
+        box-shadow: 0 0 0 11px rgba(124, 207, 169, 0);
+    }
+}
+
+@keyframes breathe-ring {
+
+    0%,
+    100% {
+        opacity: 0.45;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.28;
+        transform: scale(1.04);
+    }
+}
+
+@keyframes orb-breathe {
+
+    0%,
+    100% {
+        transform: scale(1);
+        box-shadow: 0 14px 36px rgba(112, 194, 158, 0.28);
+    }
+
+    50% {
+        transform: scale(1.07);
+        box-shadow: 0 22px 52px rgba(112, 194, 158, 0.42);
+    }
+}
+
+@keyframes ripple-boost {
+    0% {
+        transform: scale(1);
+        opacity: 0.45;
+    }
+
+    100% {
+        transform: scale(1.18);
+        opacity: 0;
+    }
+}
+
+.orion-orb {
+    width: 190px;
+    height: 190px;
+    border-radius: 9999px;
+    background: radial-gradient(circle at 30% 30%, #daf7ea 0%, #9dddbf 50%, #78cfa8 100%);
+    box-shadow: 0 16px 42px rgba(112, 194, 158, 0.32);
+    animation: orb-breathe 2.1s ease-in-out infinite;
+    cursor: pointer;
+    transition: filter .2s ease;
+}
+
+.orion-orb:hover {
+    filter: saturate(1.1) brightness(1.03);
+}
+
+.orion-orb:active {
+    animation-duration: 1.2s;
+}
+
+.orion-ring-1,
+.orion-ring-2,
+.orion-ring-3 {
+    position: absolute;
+    border-radius: 9999px;
+    border: 1.5px solid rgba(127, 201, 168, 0.34);
+    animation: breathe-ring 4.6s ease-in-out infinite;
+}
+
+.orion-ring-1 {
+    width: 228px;
+    height: 228px;
+}
+
+.orion-ring-2 {
+    width: 264px;
+    height: 264px;
+    border-color: rgba(127, 201, 168, 0.24);
+    animation-delay: .35s;
+}
+
+.orion-ring-3 {
+    width: 300px;
+    height: 300px;
+    border-color: rgba(127, 201, 168, 0.2);
+    animation-delay: .7s;
+}
+
+.orion-logo-dot {
+    background: #7ccfa9;
+    animation: breathe-dot 1.9s ease-in-out infinite;
+}
+
+.demo-link {
+    border-color: #c8e7d9;
+    color: #64b88f;
+}
+
+.demo-link:hover {
+    border-color: #a6dcc0;
+    background: #edf9f2;
+}
+
+.mint-link {
+    color: #64b88f;
+}
+
+.ripple-boost .orion-ring-1,
+.ripple-boost .orion-ring-2,
+.ripple-boost .orion-ring-3 {
+    animation: ripple-boost .9s ease-out;
+}
+
+#team-dialog::backdrop {
+    background: rgba(44, 57, 86, 0.35);
+    backdrop-filter: blur(3px);
+}

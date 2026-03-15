@@ -196,11 +196,11 @@
                 <a href="{{ board_href }}" class="text-sm font-medium" style="color:#8da0be">Back to board</a>
             </p>
             {% else %}
-            <button onclick="document.getElementById('save-modal').showModal()"
+            <a href="{{ url_for('auth_page', mode='login', next='/dashboard') }}"
                 class="btn btn-block h-14 rounded-full border-0 text-base font-bold normal-case text-white"
                 style="background:var(--accent);box-shadow:0 12px 28px var(--accent-soft)">
                 Sign in to Save Tasks &nbsp;→
-            </button>
+            </a>
             <p class="mt-3 text-center">
                 <a href="{{ url_for('home') }}" class="text-sm font-medium" style="color:#8da0be">Skip — don't save</a>
             </p>
@@ -209,127 +209,10 @@
         </div>
     </div>
 
-    {% if not session_mode %}
-    <!-- ===== Auth / Save Modal (DaisyUI modal) ===== -->
-    <dialog id="save-modal" class="modal">
-        <div class="modal-box w-11/12 max-w-sm rounded-3xl border-0 p-0 shadow-2xl">
-            <div class="p-5">
-                <div class="mb-5 flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <span class="h-2.5 w-2.5 rounded-full" style="background:var(--accent)"></span>
-                        <span class="font-bold tracking-wide" style="font-size:17px;color:#334772">ORION</span>
-                    </div>
-                    <form method="dialog">
-                        <button class="btn btn-circle btn-ghost btn-sm text-slate-400">✕</button>
-                    </form>
-                </div>
-
-                <div class="mb-5 grid grid-cols-2 rounded-2xl p-1.5" style="background:#eff1f5">
-                    <button id="stab-l" onclick="sTab('l')" class="rounded-xl py-2.5 text-sm font-bold transition"
-                        style="color:#334772;background:#fff;box-shadow:0 2px 8px rgba(90,105,140,0.12)">Log in</button>
-                    <button id="stab-s" onclick="sTab('s')" class="rounded-xl py-2.5 text-sm font-bold transition"
-                        style="color:#a8b5c8;background:transparent">Sign up</button>
-                </div>
-
-                <p id="save-msg" class="mb-3 hidden rounded-2xl px-3 py-2 text-sm"></p>
-
-                <div id="sview-l" class="space-y-3">
-                    <div>
-                        <p class="mb-1.5 text-xs font-bold uppercase tracking-widest" style="color:#7588ac">Email</p>
-                        <input id="sl-email" type="email" placeholder="you@email.com"
-                            class="input input-bordered w-full rounded-2xl"
-                            style="background:#f0f2f5;border-color:#d6dce6;color:#7082a4" />
-                    </div>
-                    <div>
-                        <p class="mb-1.5 text-xs font-bold uppercase tracking-widest" style="color:#7588ac">Password</p>
-                        <input id="sl-pw" type="password" placeholder="Your password"
-                            class="input input-bordered w-full rounded-2xl"
-                            style="background:#f0f2f5;border-color:#d6dce6;color:#7082a4" />
-                    </div>
-                    <button onclick="sDoLogin()"
-                        class="btn btn-block mt-2 h-14 rounded-full border-0 text-base font-bold normal-case text-white"
-                        style="background:var(--accent);box-shadow:0 14px 24px var(--accent-soft)">
-                        Log in ›
-                    </button>
-                </div>
-
-                <div id="sview-s" class="hidden space-y-3">
-                    <div>
-                        <p class="mb-1.5 text-xs font-bold uppercase tracking-widest" style="color:#7588ac">First name
-                        </p>
-                        <input id="ss-name" type="text" placeholder="Your first name"
-                            class="input input-bordered w-full rounded-2xl"
-                            style="background:#f0f2f5;border-color:#d6dce6;color:#7082a4" />
-                    </div>
-                    <div>
-                        <p class="mb-1.5 text-xs font-bold uppercase tracking-widest" style="color:#7588ac">Email</p>
-                        <input id="ss-email" type="email" placeholder="you@email.com"
-                            class="input input-bordered w-full rounded-2xl"
-                            style="background:#f0f2f5;border-color:#d6dce6;color:#7082a4" />
-                    </div>
-                    <div>
-                        <p class="mb-1.5 text-xs font-bold uppercase tracking-widest" style="color:#7588ac">Password</p>
-                        <input id="ss-pw" type="password" placeholder="At least 6 characters"
-                            class="input input-bordered w-full rounded-2xl"
-                            style="background:#f0f2f5;border-color:#d6dce6;color:#7082a4" />
-                    </div>
-                    <button onclick="sDoSignup()"
-                        class="btn btn-block mt-2 h-14 rounded-full border-0 text-base font-bold normal-case text-white"
-                        style="background:var(--accent);box-shadow:0 14px 24px var(--accent-soft)">
-                        Create account ›
-                    </button>
-                </div>
-            </div>
-        </div>
-        <form method="dialog" class="modal-backdrop"><button>close</button></form>
-    </dialog>
-
-    <script>
-        function sTab(t) {
-            const isL = t === "l";
-            document.getElementById("sview-l").classList.toggle("hidden", !isL);
-            document.getElementById("sview-s").classList.toggle("hidden", isL);
-            const tabL = document.getElementById("stab-l");
-            const tabS = document.getElementById("stab-s");
-            const on = "color:#334772;background:#fff;box-shadow:0 2px 8px rgba(90,105,140,0.12)";
-            const off = "color:#a8b5c8;background:transparent";
-            tabL.style.cssText = (isL ? on : off) + ";border-radius:.75rem;padding:.625rem 0;font-size:.875rem;font-weight:700;transition:all .15s";
-            tabS.style.cssText = (isL ? off : on) + ";border-radius:.75rem;padding:.625rem 0;font-size:.875rem;font-weight:700;transition:all .15s";
-            sClear();
-        }
-        function sSetMsg(text, ok) {
-            const el = document.getElementById("save-msg");
-            el.textContent = text;
-            el.style.background = ok ? "#edf9f2" : "#fff2ef";
-            el.style.color = ok ? "#3a8969" : "#c56f5b";
-            el.classList.remove("hidden");
-        }
-        function sClear() {
-            const el = document.getElementById("save-msg");
-            el.textContent = "";
-            el.classList.add("hidden");
-        }
-        function sDoLogin() {
-            const email = document.getElementById("sl-email").value.trim();
-            const pw = document.getElementById("sl-pw").value.trim();
-            if (email === "admin@gmail.com" && pw === "123456") {
-                sSetMsg("Logged in — tasks saved! (demo mode)", true);
-            } else {
-                sSetMsg("Invalid credentials. Try admin@gmail.com / 123456", false);
-            }
-        }
-        function sDoSignup() {
-            const name = document.getElementById("ss-name").value.trim();
-            const email = document.getElementById("ss-email").value.trim();
-            const pw = document.getElementById("ss-pw").value.trim();
-            if (!name || !email || pw.length < 6) {
-                sSetMsg("Fill all fields. Password must be ≥ 6 characters.", false);
-                return;
-            }
-            sSetMsg("Demo account created. Backend integration coming soon.", true);
-        }
-    </script>
-    {% endif %}
+    <div class="px-5">
+        {% include 'partials/footer.html' %}
+    </div>
+    {% include 'partials/team-dialog.html' %}
 
 </body>
 

@@ -1,0 +1,118 @@
+/* -- Dashboard CSS: only what Tailwind cannot easily express -- */
+:root {
+    --accent: #7ccfa9;
+    --accent-soft: rgba(124, 207, 169, .22);
+    --high: #cf5a3f;
+    --med:  #d49a3d;
+}
+
+body { font-family: "Poppins", sans-serif; }
+
+/* Task rows -- priority left border */
+.task-row {
+    border-radius: 14px;
+    border: 1px solid #e8edf2;
+    background: #fff;
+    padding: 11px 13px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+.task-row.high { border-left: 3px solid var(--high); }
+.task-row.med  { border-left: 3px solid var(--med);  }
+.task-row.low  { border-left: 3px solid #d6e0ea;     }
+
+/* Priority dots */
+.dot { border-radius: 9999px; flex: 0 0 auto; }
+.dot.high { width: 10px; height: 10px; background: var(--high); margin-top: 7px; }
+.dot.med  { width:  8px; height:  8px; background: var(--med);  margin-top: 8px; }
+.dot.low  { width:  6px; height:  6px; background: #c8d4e2;     margin-top: 9px; }
+
+/* Category chips */
+.meta-chip {
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #8ea2be;
+    white-space: nowrap;
+}
+.cat-work   { background: #f2eced; color: #7f5b63; border-color: #e8d4d7; }
+.cat-health { background: #eef7e7; color: #5a8a3a; border-color: #d4e8c8; }
+.cat-rel    { background: #f0f0fb; color: #6666b3; border-color: #d4d4ef; }
+.cat-fin    { background: #fef6e5; color: #9a7a20; border-color: #f0dba8; }
+.cat-grow   { background: #edf2fd; color: #5d77ad; border-color: #ccd8f0; }
+.cat-spirit { background: #fff4e9; color: #b27838; border-color: #f0d8b8; }
+.cat-family { background: #e9f6ee; color: #4a8f6e; border-color: #c4e0d0; }
+
+/* Priority select -- transparent bg keeps native dropdown options clean */
+.prio-select {
+    border-radius: 9999px;
+    border: 1.5px solid;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 18px 2px 8px;
+    font-family: inherit;
+    cursor: pointer;
+    background: transparent;
+}
+.prio-select.high { color: var(--high); border-color: #f0ccc3; }
+.prio-select.med  { color: var(--med);  border-color: #f2d39b; }
+.prio-select.low  { color: #8ea4c3;     border-color: #d5e0ed; }
+
+/* Progress ring -- default gray, JS applies conic-gradient when >0% */
+.ring {
+    width: 52px;
+    height: 52px;
+    border-radius: 9999px;
+    display: grid;
+    place-items: center;
+    background: #e8edf2;
+}
+.ring > span {
+    width: 40px;
+    height: 40px;
+    border-radius: 9999px;
+    display: grid;
+    place-items: center;
+    background: #fff;
+}
+
+/* Focus overlay */
+.focus-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    background: rgba(244, 247, 251, .96);
+    display: none;
+    flex-direction: column;
+}
+
+/* Focus priority dots */
+.focus-dots { display: flex; justify-content: center; gap: 8px; }
+.focus-dots span {
+    width: 7px; height: 7px; border-radius: 9999px;
+    background: #dde4ed; display: inline-block;
+}
+.focus-dots span.active.high { background: var(--high); }
+.focus-dots span.active.med  { background: var(--med);  }
+.focus-dots span.active.low  { background: #8ea4c3;     }
+
+/* Focus priority pill */
+
+/* Priority score buttons (settings modal) */
+.priority-score {
+    width: 30px; height: 30px;
+    border-radius: 9999px; border: 0;
+    font-size: 13px; font-weight: 700;
+    color: #8e9db5; background: #ecedf1;
+    cursor: pointer; font-family: inherit;
+    transition: all .12s ease;
+}
+.priority-score.active {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 4px 10px var(--accent-soft);
+}
