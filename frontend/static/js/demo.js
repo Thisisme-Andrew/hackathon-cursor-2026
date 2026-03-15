@@ -67,12 +67,15 @@ document.addEventListener("DOMContentLoaded", () => {
     let selectedInputMode = "voice";
     let questionTypingTimer = null;
     let reviewTypingTimer = null;
-    let transcriptInterval = null;
     let recordInterval = null;
     let recordSecondsLeft = 30;
     let currentStep = 1;
     let muted = false;
     let resultTasksForSave = [];
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    let fullTranscript = "";
 
     function updateStepUi() {
         stepLabel.textContent = `${currentStep} / ${totalSteps}`;
@@ -149,9 +152,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function resetRecordingUi() {
-        if (transcriptInterval) {
-            clearInterval(transcriptInterval);
-            transcriptInterval = null;
+        if (recognition) {
+            try {
+                recognition.stop();
+            } catch (_) {}
         }
         if (recordInterval) {
             clearInterval(recordInterval);
@@ -164,6 +168,7 @@ document.addEventListener("DOMContentLoaded", () => {
         recordingStrip.classList.add("hidden");
         liveTranscriptWrap.classList.add("hidden");
         liveTranscript.textContent = "";
+        fullTranscript = "";
     }
 
     function setQuestion(index) {
@@ -306,11 +311,22 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function finishRecording() {
-        resetRecordingUi();
+        if (recognition) {
+            try {
+                recognition.stop();
+            } catch (_) {}
+        }
+        if (recordInterval) {
+            clearInterval(recordInterval);
+            recordInterval = null;
+        }
+        recordingStrip.classList.add("hidden");
+        liveTranscriptWrap.classList.add("hidden");
         voiceReview.classList.remove("hidden");
         tapSpeakBtn.classList.add("hidden");
-        const responseText = demoVoiceResponses[body.classList.contains("mode-urgent") ? "urgent" : "calm"];
+        const responseText = fullTranscript.trim() || "No speech detected.";
         typeIntoTextarea(voiceOutput, responseText, 14, () => updateOrbState("ready"));
+        resetRecordingUi();
     }
 
     function startRecording() {
@@ -319,22 +335,61 @@ document.addEventListener("DOMContentLoaded", () => {
         tapSpeakBtn.classList.add("hidden");
         recordingStrip.classList.remove("hidden");
         liveTranscriptWrap.classList.remove("hidden");
+        liveTranscript.textContent = "";
+        fullTranscript = "";
         updateOrbState("listening");
 
-        const modeKey = body.classList.contains("mode-urgent") ? "urgent" : "calm";
-        const targetTranscript = demoVoiceResponses[modeKey];
-        let transcriptIdx = 0;
+        if (!SpeechRecognition) {
+            liveTranscript.textContent = "Voice input not supported in this browser. Try Chrome or Edge.";
+            recordInterval = setInterval(() => {
+                recordSecondsLeft -= 1;
+                recordTimer.textContent = `${recordSecondsLeft}s`;
+                if (recordSecondsLeft <= 0) {
+                    finishRecording();
+                }
+            }, 1000);
+            return;
+        }
 
-        transcriptInterval = setInterval(() => {
-            if (muted) {
-                return;
+        recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = "en-US";
+
+        recognition.onresult = (event) => {
+            if (muted) return;
+            let interim = "";
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                const transcript = event.results[i][0].transcript;
+                if (event.results[i].isFinal) {
+                    fullTranscript += transcript + " ";
+                } else {
+                    interim += transcript;
+                }
             }
-            transcriptIdx += 2;
-            liveTranscript.textContent = targetTranscript.slice(0, transcriptIdx);
-            if (transcriptIdx >= targetTranscript.length) {
-                finishRecording();
+            liveTranscript.textContent = fullTranscript + interim;
+        };
+
+        recognition.onerror = (event) => {
+            if (event.error === "no-speech" && fullTranscript) return;
+            if (event.error !== "aborted") {
+                liveTranscript.textContent = liveTranscript.textContent || `Listening… (${event.error})`;
             }
-        }, 80);
+        };
+
+        recognition.onend = () => {
+            if (recordInterval && recordSecondsLeft > 0 && !muted) {
+                try {
+                    recognition.start();
+                } catch (_) {}
+            }
+        };
+
+        try {
+            recognition.start();
+        } catch (_) {
+            liveTranscript.textContent = "Could not start voice input.";
+        }
 
         recordInterval = setInterval(() => {
             recordSecondsLeft -= 1;
@@ -359,6 +414,18 @@ document.addEventListener("DOMContentLoaded", () => {
     muteRecordBtn.addEventListener("click", () => {
         muted = !muted;
         muteRecordBtn.textContent = muted ? "Unmute" : "Mute";
+        if (recognition) {
+            if (muted) {
+                try {
+                    recognition.stop();
+                } catch (_) {}
+                liveTranscript.textContent = fullTranscript + " (paused)";
+            } else {
+                try {
+                    recognition.start();
+                } catch (_) {}
+            }
+        }
     });
 
     stopRecordBtn.addEventListener("click", finishRecording);
