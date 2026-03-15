@@ -120,3 +120,52 @@ def delete_user(user_id):
         return {"error": "User not found"}
 
     return {"message": "User deleted successfully"}
+
+
+def login_user(email, password):
+    """
+    Authenticate a user by email and password.
+    Expects frontend to send pre-hashed password; compares directly to stored passwordHash.
+    """
+    if users_collection is None:
+        return {"error": "Database is not configured. Set MONGO_URI and DB_NAME."}
+
+    if not email or not password:
+        return {"error": "email and password are required"}
+
+    user = users_collection.find_one({"email": email})
+    if not user:
+        return {"error": "Invalid email or password"}
+
+    if password != user.get("passwordHash"):
+        return {"error": "Invalid email or password"}
+
+    return {
+        "message": "Login successful",
+        "userId": user.get("userId"),
+        "email": user.get("email"),
+        "firstName": user.get("firstName"),
+        "lastName": user.get("lastName"),
+    }
+
+
+def reset_password(email, new_password):
+    """
+    Reset a user's password by email.
+    Expects frontend to send pre-hashed newPassword; stores directly.
+    """
+    if users_collection is None:
+        return {"error": "Database is not configured. Set MONGO_URI and DB_NAME."}
+
+    if not email or not new_password:
+        return {"error": "email and newPassword are required"}
+
+    user = users_collection.find_one({"email": email})
+    if not user:
+        return {"error": "No account found with that email"}
+
+    users_collection.update_one(
+        {"email": email},
+        {"$set": {"passwordHash": new_password}},
+    )
+    return {"message": "Password reset successfully"}

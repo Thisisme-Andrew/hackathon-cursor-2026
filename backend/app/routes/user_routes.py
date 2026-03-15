@@ -1,7 +1,32 @@
 from flask import Blueprint, request, jsonify
-from app.services.user_service import create_user, get_all_users, update_user, delete_user
+from app.services.user_service import create_user, get_all_users, update_user, delete_user, login_user, reset_password
 
 user_bp = Blueprint("users", __name__)
+
+
+@user_bp.route("/login", methods=["POST"])
+def login():
+    data = request.get_json() or {}
+    result = login_user(
+        email=data.get("email"),
+        password=data.get("password"),
+    )
+    if "error" in result:
+        return jsonify(result), 401
+    return jsonify(result), 200
+
+
+@user_bp.route("/reset-password", methods=["POST"])
+def reset():
+    data = request.get_json() or {}
+    result = reset_password(
+        email=data.get("email"),
+        new_password=data.get("newPassword"),
+    )
+    if "error" in result:
+        return jsonify(result), 400
+    return jsonify(result), 200
+
 
 @user_bp.route("/", methods=["POST"])
 def add_user():
