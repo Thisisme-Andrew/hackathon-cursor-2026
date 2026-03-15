@@ -44,13 +44,13 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const priorityIconColors = {
-        Work: "#7f5b63",
-        Health: "#97c05d",
+        Work: "#a67a84",
+        Health: "#a7cf72",
         Relationships: "#9b9bd9",
         Finance: "#d1a54e",
         "Personal Growth": "#8ca0d6",
         Spirituality: "#d8a656",
-        Family: "#6fb596",
+        Family: "#7ecda8",
     };
 
     function setTabState(button, active) {
@@ -87,11 +87,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function setMessage(text, isSuccess) {
         authMessage.textContent = text;
-        authMessage.classList.remove("hidden", "bg-emerald-50", "text-emerald-700", "bg-red-50", "text-red-700");
+        authMessage.classList.remove("hidden", "auth-msg-success", "auth-msg-error");
         if (isSuccess) {
-            authMessage.classList.add("bg-emerald-50", "text-emerald-700");
+            authMessage.classList.add("auth-msg-success");
         } else {
-            authMessage.classList.add("bg-red-50", "text-red-700");
+            authMessage.classList.add("auth-msg-error");
         }
     }
 

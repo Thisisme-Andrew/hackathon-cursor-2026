@@ -12,12 +12,12 @@
             0%,
             100% {
                 transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(123, 183, 154, 0.35);
+                box-shadow: 0 0 0 0 rgba(124, 207, 169, 0.35);
             }
 
             50% {
                 transform: scale(1.22);
-                box-shadow: 0 0 0 11px rgba(123, 183, 154, 0);
+                box-shadow: 0 0 0 11px rgba(124, 207, 169, 0);
             }
         }
 
@@ -40,12 +40,12 @@
             0%,
             100% {
                 transform: scale(1);
-                box-shadow: 0 14px 36px rgba(104, 170, 140, 0.28);
+                box-shadow: 0 14px 36px rgba(112, 194, 158, 0.28);
             }
 
             50% {
                 transform: scale(1.07);
-                box-shadow: 0 22px 52px rgba(104, 170, 140, 0.42);
+                box-shadow: 0 22px 52px rgba(112, 194, 158, 0.42);
             }
         }
 
@@ -65,8 +65,8 @@
             width: 190px;
             height: 190px;
             border-radius: 9999px;
-            background: radial-gradient(circle at 30% 30%, #c8f0dd 0%, #8ec8ad 50%, #74b499 100%);
-            box-shadow: 0 16px 42px rgba(104, 170, 140, 0.32);
+            background: radial-gradient(circle at 30% 30%, #daf7ea 0%, #9dddbf 50%, #78cfa8 100%);
+            box-shadow: 0 16px 42px rgba(112, 194, 158, 0.32);
             animation: orb-breathe 2.1s ease-in-out infinite;
             cursor: pointer;
             transition: filter .2s ease;
@@ -85,7 +85,7 @@
         .orion-ring-3 {
             position: absolute;
             border-radius: 9999px;
-            border: 1.5px solid rgba(109, 167, 141, 0.34);
+            border: 1.5px solid rgba(127, 201, 168, 0.34);
             animation: breathe-ring 4.6s ease-in-out infinite;
         }
 
@@ -97,19 +97,34 @@
         .orion-ring-2 {
             width: 264px;
             height: 264px;
-            border-color: rgba(109, 167, 141, 0.24);
+            border-color: rgba(127, 201, 168, 0.24);
             animation-delay: .35s;
         }
 
         .orion-ring-3 {
             width: 300px;
             height: 300px;
-            border-color: rgba(109, 167, 141, 0.2);
+            border-color: rgba(127, 201, 168, 0.2);
             animation-delay: .7s;
         }
 
         .orion-logo-dot {
+            background: #7ccfa9;
             animation: breathe-dot 1.9s ease-in-out infinite;
+        }
+
+        .demo-link {
+            border-color: #c8e7d9;
+            color: #64b88f;
+        }
+
+        .demo-link:hover {
+            border-color: #a6dcc0;
+            background: #edf9f2;
+        }
+
+        .mint-link {
+            color: #64b88f;
         }
 
         .ripple-boost .orion-ring-1,
@@ -129,9 +144,9 @@
     <main class="mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pt-8 pb-5">
         <section class="pt-4 text-center">
             <div class="mb-3 flex items-center justify-center gap-3">
-                <span class="orion-logo-dot h-3 w-3 rounded-full bg-[#7bb79a] shadow"></span>
+                <span class="orion-logo-dot h-3 w-3 rounded-full shadow"></span>
                 <h1 class="text-4xl font-extrabold tracking-[0.32em] text-[#334772]">ORION</h1>
-                <span class="orion-logo-dot h-3 w-3 rounded-full bg-[#7bb79a] shadow"></span>
+                <span class="orion-logo-dot h-3 w-3 rounded-full shadow"></span>
             </div>
 
             <p class="mb-10 text-xs font-semibold tracking-[0.24em] text-[#667eab]">
@@ -156,13 +171,13 @@
                 </a>
 
                 <a href="{{ url_for('demo_page') }}"
-                    class="btn h-14 rounded-full border border-[#b9d7c9] bg-transparent text-lg font-bold text-[#6ea789] hover:border-[#9dcab4] hover:bg-[#e8f5ee]">
+                    class="demo-link btn h-14 rounded-full border bg-transparent text-lg font-bold">
                     Try a demo first
                 </a>
 
                 <p class="pt-2 text-base text-[#9dafcb]">
                     Already have an account?
-                    <a href="{{ url_for('auth_page', mode='login') }}" class="font-bold text-[#6ea789]">Log in</a>
+                    <a href="{{ url_for('auth_page', mode='login') }}" class="mint-link font-bold">Log in</a>
                 </p>
             </div>
         </section>

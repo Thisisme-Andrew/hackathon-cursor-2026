@@ -14,7 +14,7 @@
         :root {
             --orion-navy: #334772;
             --orion-navy-soft: #7588ac;
-            --orion-mint: #7fb79d;
+            --orion-mint: #7ccfa9;
             --orion-bg: #f4f6fa;
             --orion-line: #d6dce6;
         }
@@ -86,11 +86,11 @@
             font-size: 15px;
             font-weight: 700;
             text-transform: none;
-            box-shadow: 0 22px 32px rgba(130, 184, 160, 0.34);
+            box-shadow: 0 22px 32px rgba(124, 207, 169, 0.34);
         }
 
         .orion-cta:hover {
-            background: #73ab90;
+            background: #69c39a;
         }
 
         .priority-title {
@@ -157,7 +157,25 @@
         .priority-score.active {
             background: var(--orion-mint);
             color: #fff;
-            box-shadow: 0 6px 16px rgba(127, 183, 157, 0.35);
+            box-shadow: 0 6px 16px rgba(124, 207, 169, 0.35);
+        }
+
+        .brand-dot {
+            background: #7ccfa9;
+        }
+
+        .mint-link {
+            color: #64b88f;
+        }
+
+        .auth-msg-success {
+            background: #edf9f2;
+            color: #3a8969;
+        }
+
+        .auth-msg-error {
+            background: #fff2ef;
+            color: #c56f5b;
         }
 
         @media (max-width: 420px) {
@@ -194,7 +212,7 @@
         <section class="auth-card w-full p-5 sm:p-5" data-auth-root data-initial-mode="{{ initial_mode }}">
             <div class="mb-5 flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                    <span class="h-2.5 w-2.5 rounded-full bg-[#7bb79a]"></span>
+                    <span class="brand-dot h-2.5 w-2.5 rounded-full"></span>
                     <h1 class="text-[18px] font-bold tracking-wide text-[#334772]">ORION</h1>
                 </div>
                 <a href="{{ url_for('home') }}"
@@ -236,7 +254,7 @@
                 </button>
 
                 <p class="pt-1 text-center text-[12px] text-[#a1aec2]">
-                    No account? <button id="go-signup" type="button" class="font-bold text-[#6ea789]">Sign up</button>
+                    No account? <button id="go-signup" type="button" class="mint-link font-bold">Sign up</button>
                 </p>
             </div>
 
