@@ -1,0 +1,17 @@
+{
+  "name": "aria",
+  "private": true,
+  "scripts": {
+    "setup:py": "python -m pip install -r requirements.txt",
+    "watch:css": "tailwindcss -i ./tailwind.css -o ./frontend/static/css/output.css --watch",
+    "build:css": "tailwindcss -i ./tailwind.css -o ./frontend/static/css/output.css --minify",
+    "dev": "concurrently \"python backend/run.py\" \"npm run watch:css\"",
+    "dev:setup": "npm run setup:py && npm run dev"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.13",
+    "concurrently": "^9.2.1",
+    "daisyui": "^5.3.3",
+    "tailwindcss": "^4.1.13"
+  }
+}

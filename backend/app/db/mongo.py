@@ -19,10 +19,15 @@ def _encode_mongo_uri(uri: str) -> str:
     return encoded
 
 
-client = MongoClient(
-    _encode_mongo_uri(Config.MONGO_URI),
-    tlsCAFile=certifi.where(),
-)
-db = client[Config.DB_NAME]
-
-users_collection = db["users"]
+# Only create a Mongo client when required env vars are provided.
+if Config.MONGO_URI and Config.DB_NAME:
+    client = MongoClient(
+        _encode_mongo_uri(Config.MONGO_URI),
+        tlsCAFile=certifi.where(),
+    )
+    db = client[Config.DB_NAME]
+    users_collection = db["users"]
+else:
+    client = None
+    db = None
+    users_collection = None
