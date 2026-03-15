@@ -24,10 +24,15 @@ if Config.MONGO_URI and Config.DB_NAME:
     client = MongoClient(
         _encode_mongo_uri(Config.MONGO_URI),
         tlsCAFile=certifi.where(),
+        serverSelectionTimeoutMS=3000,
+        connectTimeoutMS=3000,
+        socketTimeoutMS=3000,
     )
     db = client[Config.DB_NAME]
     users_collection = db["users"]
+    tasks_collection = db["tasks"]
 else:
     client = None
     db = None
     users_collection = None
+    tasks_collection = None

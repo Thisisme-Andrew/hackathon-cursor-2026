@@ -4,3 +4,4 @@
 
 /* Scan Jinja/HTML templates to generate only used classes. */
 @source "./frontend/templates/**/*.{html,jinja,j2}";
+@source "./frontend/static/js/**/*.js";
