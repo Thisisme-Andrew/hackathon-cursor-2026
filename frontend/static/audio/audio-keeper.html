@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Orion Audio Keeper</title>
+</head>
+
+<body style="margin:0;padding:0;overflow:hidden;background:transparent">
+    <audio id="orion-bg-audio" src="/static/audio/bg.mp3" loop autoplay style="display:none"></audio>
+    <script>
+        var audio = document.getElementById('orion-bg-audio');
+        audio.volume = 0.6;
+        function tryPlay() {
+            if (audio.paused) {
+                audio.currentTime = 0;
+                audio.play().catch(() => { });
+            }
+        }
+        tryPlay();
+        window.addEventListener('pointerdown', tryPlay, { once: true });
+        window.addEventListener('keydown', tryPlay, { once: true });
+        // Listen for mute/unmute from parent
+        window.addEventListener('message', function (e) {
+            if (e.data === 'orion-mute') audio.muted = true;
+            if (e.data === 'orion-unmute') audio.muted = false;
+        });
+    </script>
+</body>
+
+</html>
