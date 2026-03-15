@@ -27,14 +27,14 @@ document.addEventListener("DOMContentLoaded", () => {
         Spirituality: "cat-spirit",
         Family: "cat-family",
     };
-    const CAT_SYMBOL = {
-        Work: "W",
-        Health: "H",
-        Relationships: "R",
-        Finance: "F",
-        "Personal Growth": "P",
-        Spirituality: "S",
-        Family: "Fa",
+    const CAT_ICONS = {
+        Work: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 12h18"/></svg>',
+        Health: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 20c4-3 6-8 6-15"/><path d="M12 15c4 0 7-3 7-7"/><path d="M4 12c2 0 4 1 5 3"/></svg>',
+        Relationships: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 18v-8a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H9l-5 3v-4Z"/></svg>',
+        Finance: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v10"/><path d="M9 9c0-1.1 1.3-2 3-2s3 .9 3 2-1.3 2-3 2-3 .9-3 2 1.3 2 3 2 3-.9 3-2"/></svg>',
+        "Personal Growth": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19h16"/><path d="M5 16l4-4 3 2 6-6"/><path d="M16 8h2v2"/></svg>',
+        Spirituality: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3c0 4-4 5-4 9a4 4 0 0 0 8 0c0-4-4-5-4-9Z"/><path d="M8 16h8"/><path d="M9 19h6"/></svg>',
+        Family: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg>',
     };
 
     const user = seed.user || { name: "sagesse", email: "sagesse@gmail.com" };
@@ -154,8 +154,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function categoryChip(category) {
         const key = CAT_KEY[category] || "cat-work";
-        const symbol = CAT_SYMBOL[category] || "T";
-        return `<span class="meta-chip ${key}">${symbol} ${category}</span>`;
+        const svg = CAT_ICONS[category] || "";
+        const iconHtml = svg
+            ? `<span style="display:inline-flex;width:11px;height:11px;flex:none;vertical-align:middle">${svg}</span> `
+            : "";
+        return `<span class="meta-chip ${key}">${iconHtml}${category}</span>`;
     }
 
     function formatDue(due) {
@@ -210,8 +213,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (done > 0) {
             doneWrap.classList.remove("hide");
+            clearDoneBtn.classList.remove("hide");
         } else {
             doneWrap.classList.add("hide");
+            clearDoneBtn.classList.add("hide");
             doneExpanded = false;
         }
     }
@@ -323,7 +328,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 return `
                     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-                        <span style="font-size:13px;font-weight:600;color:#334772">${CAT_SYMBOL[label] || "T"} ${label}</span>
+                        <span style="font-size:13px;font-weight:600;color:#334772;display:flex;align-items:center;gap:6px">
+                            <span style="display:inline-flex;width:14px;height:14px;flex:none">${CAT_ICONS[label] || ""}</span>
+                            ${label}
+                        </span>
                         <div style="display:flex;gap:6px">${scores}</div>
                     </div>
                 `;
@@ -434,7 +442,10 @@ document.addEventListener("DOMContentLoaded", () => {
     refreshQuote.addEventListener("click", nextQuote);
     setInterval(nextQuote, 9000);
 
-    openAdd.addEventListener("click", () => addTaskCard.classList.toggle("hide"));
+    openAdd.addEventListener("click", () => {
+        addTaskCard.classList.toggle("hide");
+        if (!addTaskCard.classList.contains("hide")) newTitle.focus();
+    });
     closeAdd.addEventListener("click", () => addTaskCard.classList.add("hide"));
     addTaskBtn.addEventListener("click", addTaskFromForm);
 

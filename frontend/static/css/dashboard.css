@@ -7,6 +7,7 @@
 }
 
 body { font-family: "Poppins", sans-serif; }
+.hide { display: none !important; }
 
 /* Task rows -- priority left border */
 .task-row {
@@ -80,7 +81,7 @@ body { font-family: "Poppins", sans-serif; }
     background: #fff;
 }
 
-/* Focus overlay */
+/* Focus overlay -- centered */
 .focus-overlay {
     position: fixed;
     inset: 0;
@@ -88,6 +89,8 @@ body { font-family: "Poppins", sans-serif; }
     background: rgba(244, 247, 251, .96);
     display: none;
     flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Focus priority dots */
