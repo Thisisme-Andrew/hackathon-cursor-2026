@@ -28,7 +28,7 @@ def reset():
     return jsonify(result), 200
 
 
-@user_bp.route("/", methods=["POST"])
+@user_bp.route("/create-user", methods=["POST"])
 def add_user():
     data = request.get_json()
     result = create_user(data)
@@ -37,7 +37,7 @@ def add_user():
 
     return jsonify(result), 201
 
-@user_bp.route("/", methods=["GET"])
+@user_bp.route("/get-users", methods=["GET"])
 def fetch_users():
     result = get_all_users()
     return jsonify(result)
