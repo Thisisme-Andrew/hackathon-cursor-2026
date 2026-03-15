@@ -34,6 +34,7 @@ def signup_user(data):
 
     # Make a copy so we don't mutate the original request data directly
     user_data = dict(data)
+    user_data.pop("password", None)  # Never store plain password
 
     # Inject the hashed password into the structure expected by user_model
     user_data["passwordHash"] = password_hash

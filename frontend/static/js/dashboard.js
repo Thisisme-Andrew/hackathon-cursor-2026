@@ -1,9 +1,15 @@
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+        window.location.href = "/auth?mode=login&next=" + encodeURIComponent("/dashboard");
+        return;
+    }
+
     const seedNode = document.getElementById("dashboard-seed");
     const seed = seedNode
         ? JSON.parse(seedNode.textContent)
         : {
-              user: { name: "sagesse", email: "sagesse@gmail.com" },
+              user: { name: "Demo", email: "demo@orion.app" },
               quotes: ["Progress, not perfection."],
               tasks: [],
               priorityWeights: {
@@ -16,6 +22,33 @@ document.addEventListener("DOMContentLoaded", () => {
                   Family: 3,
               },
           };
+
+    const user = {
+        id: currentUser.userId,
+        userId: currentUser.userId,
+        name: currentUser.firstName || currentUser.email?.split("@")[0] || "User",
+        email: currentUser.email,
+    };
+    const userId = user.userId || user.id;
+    const quotes = Array.isArray(seed.quotes) && seed.quotes.length ? seed.quotes : ["Progress, not perfection."];
+    let tasks = Array.isArray(seed.tasks) ? seed.tasks.map((t) => ({ ...t })) : [];
+    const LABEL_TO_SETTINGS_KEY = {
+        Work: "work",
+        Health: "health",
+        Relationships: "relationships",
+        Finance: "finance",
+        "Personal Growth": "personalGrowth",
+        Spirituality: "spirituality",
+        Family: "family",
+    };
+    const DISPLAY_LABELS = ["Work", "Health", "Relationships", "Finance", "Personal Growth", "Spirituality", "Family"];
+    const weights = {};
+    for (const label of DISPLAY_LABELS) {
+        const settingsKey = LABEL_TO_SETTINGS_KEY[label];
+        const userValue = currentUser.settings?.categoryWeights?.[settingsKey];
+        const seedValue = seed.priorityWeights?.[label];
+        weights[label] = userValue ?? seedValue ?? 3;
+    }
 
     const PRIORITY_ORDER = { HIGH: 3, MED: 2, LOW: 1 };
     const CAT_KEY = {
@@ -36,12 +69,6 @@ document.addEventListener("DOMContentLoaded", () => {
         Spirituality: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3c0 4-4 5-4 9a4 4 0 0 0 8 0c0-4-4-5-4-9Z"/><path d="M8 16h8"/><path d="M9 19h6"/></svg>',
         Family: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg>',
     };
-
-    const user = seed.user || { id: "sagesse", name: "sagesse", email: "sagesse@gmail.com" };
-    const userId = user.id || user.email || "sagesse";
-    const quotes = Array.isArray(seed.quotes) && seed.quotes.length ? seed.quotes : ["Progress, not perfection."];
-    let tasks = Array.isArray(seed.tasks) ? seed.tasks.map((t) => ({ ...t })) : [];
-    const weights = { ...(seed.priorityWeights || {}) };
 
     const API_BASE = "/tasks";
 
@@ -690,7 +717,21 @@ document.addEventListener("DOMContentLoaded", () => {
         toggleUserMenu();
     });
 
-    document.addEventListener("click", () => toggleUserMenu(false));
+    userDropdown.addEventListener("click", (e) => e.stopPropagation());
+
+    document.addEventListener("click", () => {
+        if (!userDropdown.classList.contains("hide")) {
+            toggleUserMenu(false);
+        }
+    });
+
+    const signOutBtn = document.getElementById("sign-out-btn");
+    if (signOutBtn) {
+        signOutBtn.addEventListener("click", () => {
+            toggleUserMenu(false);
+            logout();
+        });
+    }
 
     openPrioritySettings.addEventListener("click", () => {
         toggleUserMenu(false);
@@ -698,7 +739,19 @@ document.addEventListener("DOMContentLoaded", () => {
         priorityModal.showModal();
     });
 
-    saveWeights.addEventListener("click", () => {
+    saveWeights.addEventListener("click", async () => {
+        const categoryWeights = {};
+        for (const [label, value] of Object.entries(weights)) {
+            const key = LABEL_TO_SETTINGS_KEY[label] || label.toLowerCase().replace(/\s+/g, "");
+            categoryWeights[key] = value;
+        }
+        try {
+            await fetch(`/users/${encodeURIComponent(userId)}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ settings: { categoryWeights } }),
+            });
+        } catch (_) {}
         priorityModal.close();
     });
 
